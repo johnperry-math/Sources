@@ -278,6 +278,7 @@ struct sValCmd1 dArith1[]=
 ,{D(loNewtonP),    NEWTONPOLY_CMD,  IDEAL_CMD,      IDEAL_CMD     , ALLOW_PLURAL |ALLOW_RING}
 ,{D(jjWAIT1ST1),   WAIT1ST_CMD,     INT_CMD,        LIST_CMD      , ALLOW_PLURAL |ALLOW_RING}
 ,{D(jjWAITALL1),   WAITALL_CMD,     INT_CMD,        LIST_CMD      , ALLOW_PLURAL |ALLOW_RING}
+,{D(jjSELMON),    SELMON_CMD,     IDEAL_CMD,       IDEAL_CMD,   NO_PLURAL | ALLOW_RING | NO_ZERODIVISOR}
 ,{NULL_VAL,        0,               0,              0             , NO_PLURAL |NO_RING}
 };
 /*=================== operations with 2 arg.: table =================*/
@@ -567,6 +568,7 @@ struct sValCmd2 dArith2[]=
 ,{D(jjGCD_N),     GCD_CMD,        NUMBER_CMD,     NUMBER_CMD, NUMBER_CMD, ALLOW_PLURAL |ALLOW_RING}
 ,{D(jjGCD_BI),    GCD_CMD,        BIGINT_CMD,     BIGINT_CMD, BIGINT_CMD, ALLOW_PLURAL |ALLOW_RING}
 ,{D(jjGCD_P),     GCD_CMD,        POLY_CMD,       POLY_CMD,   POLY_CMD, NO_PLURAL |ALLOW_RING}
+,{D(jjHPOLY),     HPOLY_CMD,      POLY_CMD,       INTVEC_CMD, INT_CMD, NO_PLURAL | ALLOW_RING | NO_ZERODIVISOR}
 ,{D(jjHILBERT2),  HILBERT_CMD,    INTVEC_CMD,     IDEAL_CMD,  INT_CMD, NO_PLURAL | ALLOW_RING | NO_ZERODIVISOR}
 ,{D(jjHILBERT2),  HILBERT_CMD,    INTVEC_CMD,     MODUL_CMD,  INT_CMD, NO_PLURAL | ALLOW_RING | NO_ZERODIVISOR}
 ,{D(jjHOMOG1_W),  HOMOG_CMD,      INT_CMD,        IDEAL_CMD,  INTVEC_CMD, ALLOW_PLURAL |ALLOW_RING}
@@ -925,6 +927,8 @@ cmdnames cmds[] =
   { "gcd",         0, GCD_CMD ,           CMD_2},
   { "GCD",         2, GCD_CMD ,           CMD_2},
   { "hilb",        0, HILBERT_CMD ,       CMD_123},
+  { "hpoly",       0, HPOLY_CMD ,         CMD_2},
+  { "selmon",      0, SELMON_CMD ,        CMD_1},
   { "highcorner",  0, HIGHCORNER_CMD,     CMD_1},
   { "homog",       0, HOMOG_CMD ,         CMD_123},
   { "hres",        0, HRES_CMD ,          CMD_2},

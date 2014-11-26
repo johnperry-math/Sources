@@ -1,0 +1,7 @@
+ring r=43,(w,x,y,z),dp; ideal i=w+x+y+z,wx+xy+yz+wz,wxy+xyz+yzw+zwx,wxyz-1;
+std(i);
+basering;
+ring r=43(v,w,x,y,z),dp;
+ideal i=v+w+x+y+z,vw+wx+xy+yz+zv,vwx+wxy+xyz+yzv+zvw,vwxy+wxyz+xyzv+yzvw+zvwx,
+vwxyz-1;
+std(i);

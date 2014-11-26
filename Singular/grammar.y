@@ -269,6 +269,8 @@ void yyerror(const char * fmt)
 %token <i> VDIM_CMD
 %token <i> WEDGE_CMD
 %token <i> WEIGHT_CMD
+%token <i> HPOLY_CMD
+%token <i> SELMON_CMD
 
 /*system variables in ring block*/
 %token <i> VALTVARS

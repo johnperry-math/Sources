@@ -21,7 +21,7 @@
 
 #if MYTEST
 # ifdef HAVE_TAIL_RING
-#  undef HAVE_TAIL_RING
+#undef HAVE_TAIL_RING
 # endif // ifdef HAVE_TAIL_RING
 #endif
 
@@ -87,6 +87,11 @@ long sba_interreduction_operations;
 #ifdef HAVE_PLURAL
 #include <polys/nc/nc.h>
 #endif
+
+// dynamic
+#include "dynamic_engine.h"
+#include "skeleton.h"
+
 // #include "timer.h"
 
 /* shiftgb stuff */
@@ -1335,7 +1340,128 @@ static int bba_count = 0;
 #endif /* KDEBUG */
 void kDebugPrint(kStrategy strat);
 
-ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
+long weight_of(poly p, ring R)
+{
+  int n = R->N;
+  long result = 0;
+  int * w = R->wvhdl[0];
+  /*for (int i = 0; i < n; ++i)
+  {
+    long a = p_GetExp(p,R,i); long b = pGetExp(p,i);
+    result += ((long )(w[i])) * p_GetExp(p,R,i);
+  }*/
+  for (int i = 1; i <= n; ++i)
+  {
+    long a = pGetExp(p,i);
+    result += ((long )(w[i-1])) * pGetExp(p,i);
+  }
+  return result;
+}
+
+bool lex_p_greater_q(poly p, poly q, ring R)
+{
+  bool result = false;
+  for (int i = 1; !result && i <= R->N; ++i)
+    if (pGetExp(p,i) > pGetExp(q,i)) result = true;
+  return result;
+}
+
+poly partition_polys_dynamically(poly & head, poly & tail, poly * newhead, poly * newtail, ring R)
+{
+  poly pivot = tail;
+  poly prev = NULL, cur = head, last = pivot;
+
+  while (cur != pivot)
+  {
+    long dc = weight_of(cur, R); long dp = weight_of(pivot, R);
+    if (dc > dp)
+    {
+      if ((*newhead) == NULL) (*newhead) = cur;
+      prev = cur;
+      cur = cur->next;
+    }
+    else if (dc < dp)
+    {
+      if (prev != NULL) prev->next = cur->next;
+      poly tmp = cur->next;
+      cur->next = NULL;
+      last->next = cur;
+      last = cur;
+      cur = tmp;
+    }
+    else
+    {
+      if (lex_p_greater_q(cur, pivot, R))
+      {
+        if ((*newhead) == NULL) (*newhead) = cur;
+        prev = cur;
+        cur = cur->next;
+      }
+      else
+      {
+        if (prev != NULL) prev->next = cur->next;
+        poly tmp = cur->next;
+        cur->next = NULL;
+        last->next = cur;
+        last = cur;
+        cur = tmp;
+      }
+    }
+  }
+  if ((*newhead) == NULL) (*newhead) = pivot;
+  (*newtail) = last;
+  return pivot;
+}
+
+inline poly get_poly_tail(poly head)
+{ poly result = head; while (result->next != NULL) result = result->next; return result;}
+
+/** Call with head==tail at beginning of sort. */
+poly resort_polys_dynamically(poly head, poly tail, const ring & R)
+{
+  if (head == NULL || head == tail) return head;
+  poly newhead = NULL, newtail = NULL;
+  poly pivot = partition_polys_dynamically(head, tail, &newhead, &newtail, R);
+  if (newhead != pivot)
+  {
+    poly tmp = newhead;
+    while (tmp->next != pivot) tmp = tmp->next;
+    tmp->next = NULL;
+    newhead = resort_polys_dynamically(newhead, tmp, R);
+    tmp = get_poly_tail(newhead);
+    tmp->next = pivot;
+  }
+  pivot->next = resort_polys_dynamically(pivot->next, newtail, R);
+  return newhead;
+}
+
+ring new_dynamic_ring_from_old(ring oldR, int **wvhdl)
+{
+  int n = oldR->N;
+  // first, fill out the ordering
+  for (int i = 1; i < n; ++i)
+    for (int j = 0; j < n; ++j)
+      wvhdl[0][i*n+j] = (i - 1 == j) ? 1 : 0;
+  int * order = (int *)omAlloc(3*sizeof(int *));
+  int * block0 = (int *)omAlloc0(3*sizeof(int *));
+  int * block1 = (int *)omAlloc0(3*sizeof(int *));
+  order[0] = ringorder_M;
+  block0[0] = 1;
+  block1[0] = n;
+  order[1] = ringorder_lp;
+  block0[1] = 1;
+  block1[1] = n;
+  order[2] = ringorder_C;
+  block0[2] = 1;
+  block1[2] = n;
+  order[3] = 0;
+  // create the ring & return
+  ring result = rDefault(nCopyCoeff(oldR->cf), oldR->N, oldR->names, 4, order, block0, block1, wvhdl);
+  rComplete(result);
+  return result;
+}
+
+ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic_algorithm)
 {
 #ifdef KDEBUG
   bba_count++;
@@ -1347,6 +1473,55 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   BOOLEAN withT = FALSE;
   BITSET save;
   SI_SAVE_OPT1(save);
+
+  #include <iostream>
+  ring dynR;
+  vector<poly> CurrentLPPs;
+  vector<poly> CurrentPolys;
+  skeleton skel(currRing->N);
+  if (dynamic_algorithm)
+  {
+    int n = currRing->N;
+    //dynR = rCopy(currRing);
+    //dynR = currRing;
+    // release old ring information
+    //omFree(dynR->wvhdl); omFree(dynR->order); omFree(dynR->block0); omFree(dynR->block1);
+    // create new ring information
+    int **wvhdl = (int **)omAlloc0(4*sizeof(int_ptr));
+    wvhdl[0] = (int *)omAlloc(n*n*sizeof(int));
+    wvhdl[1] = NULL;
+    wvhdl[2] = NULL;
+    wvhdl[3] = NULL;
+    for (int i = 0; i < n; ++i)
+      wvhdl[0][i] = 1;
+    dynR = new_dynamic_ring_from_old(currRing, wvhdl);
+    strat->tailRing = dynR;
+    strat->P.tailRing = dynR;
+    // coerce from old to new
+    ring oldR = currRing;
+    // coerce input polynomials
+    for (int i = 0; i < IDELEMS(F); ++i)
+    {
+      cout << "moving "; p_Write(F->m[i], oldR);
+      //F->m[i] = prMoveR(F->m[i], oldR, dynR);
+      poly oldP = F->m[i];
+      F->m[i] = prShallowCopyR(oldP, oldR, dynR);
+      p_Setm(F->m[i], dynR);
+      cout << "to "; p_Write(F->m[i], dynR);
+      p_ShallowDelete(&oldP, oldR);
+    }
+    if (Q != NULL)
+      for (int i = 0; i < IDELEMS(Q); ++i)
+      {
+        //Q->m[i] = prMoveR(Q->m[i], oldR, dynR);
+        poly oldP = Q->m[i];
+        Q->m[i] = prShallowCopyR(oldP, oldR, dynR);
+        p_Setm(Q->m[i], dynR);
+        p_ShallowDelete(&oldP, oldR);
+      }
+    rChangeCurrRing(dynR);
+    rDelete(oldR);
+  }
 
   initBuchMoraCrit(strat); /*set Gebauer, honey, sugarCrit*/
   initBuchMoraPos(strat);
@@ -1381,7 +1556,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 #endif /* KDEBUG */
 
 #ifdef HAVE_TAIL_RING
-  if(!idIs0(F) &&(!rField_is_Ring(currRing)))  // create strong gcd poly computes with tailring and S[i] ->to be fixed
+  if(!idIs0(F) &&(!rField_is_Ring(currRing)) && !dynamic_algorithm)  // create strong gcd poly computes with tailring and S[i] ->to be fixed
     kStratInitChangeTailRing(strat);
 #endif
   if (BVERBOSE(23))
@@ -1390,6 +1565,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
     if (test_PosInL!=NULL) strat->posInL=test_PosInL;
     kDebugPrint(strat);
   }
+  if (dynamic_algorithm) strat->tailRing = dynR;
 
 
 #ifdef KDEBUG
@@ -1398,6 +1574,8 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   /* compute------------------------------------------------------- */
   while (strat->Ll >= 0)
   {
+    cout << "looping in basis\n";
+    cout << "strat->P.p = "; pWrite(strat->P.p);
     #ifdef KDEBUG
       loop_count++;
       if (TEST_OPT_DEBUG) messageSets(strat);
@@ -1522,6 +1700,150 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
           strat->P.p = redtailBba(&(strat->P),pos-1,strat, withT);
       }
 
+      // refine dynamic ordering
+      if (dynamic_algorithm)
+      {
+        cout << "selecting monomial for "; p_Write(strat->P.p, dynR);
+        SelectMonomial(strat->P.p, CurrentLPPs, CurrentPolys, skel, ORD_HILBERT_THEN_DEG);
+        cout << "selected\n";
+        ray new_weight = ray_sum(skel.get_rays());
+        cout << "have ray " << new_weight << "\n";
+        // adjust currRing
+       int n = dynR->N;
+        cout << "adjusting weights\n";
+        /*ring tmp = rCopy(dynR);
+        rDelete(dynR);
+        dynR = tmp;*/
+        int ** wvhdl = (int **)omAlloc0(4*sizeof(int_ptr));
+        wvhdl[0] = (int *)omAlloc(n*n*sizeof(int));
+        wvhdl[1] = NULL;
+        wvhdl[2] = NULL;
+        wvhdl[3] = NULL;
+        for (int i = 0; i < n; ++i)
+            wvhdl[0][i] = new_weight[i];
+        ring oldR = dynR;
+        dynR = new_dynamic_ring_from_old(oldR, wvhdl);
+        rChangeCurrRing(dynR);
+        cout << "changing current ring\n";
+        strat->tailRing = dynR;
+        strat->P.tailRing = dynR;
+        // coerce polys
+        cout << "fixing LPPs\n";
+        for (vector<poly>::iterator pp = CurrentLPPs.begin(); pp != CurrentLPPs.end(); ++pp)
+        {
+          //*pp = prMoveR(*pp, oldR, dynR);
+          poly oldP = *pp;
+          *pp = prShallowCopyR(oldP, oldR, dynR);
+          p_Setm(*pp, dynR);
+          p_ShallowDelete(&oldP, oldR);
+        }
+        cout << "fixing " << CurrentPolys.size() << " polys\n";
+        for (int i = 0; i < CurrentLPPs.size() - 1; ++i)
+        {
+          cout << "poly " << i << ' '; pWrite(strat->S[i]);
+          //strat->S[i] = prMoveR(strat->S[i], oldR, dynR);
+          poly oldP = strat->S[i];
+          strat->S[i] = prShallowCopyR(oldP, oldR, dynR);
+          for (int j = 0; j <= strat->tl; ++j)
+            if (strat->T[j].p == oldP)
+              strat->T[j].p = strat->S[i];
+          cout << "hold\n";
+          for (int j = 0; j <= strat->sl; ++j)
+          {
+            if (strat->L[j].p1 == oldP)
+              strat->L[j].p1 = strat->S[i];
+            if (strat->L[j].p2 == oldP)
+              strat->L[j].p2 = strat->S[i];
+          }
+          p_Setm(strat->S[i], dynR);
+          p_ShallowDelete(&oldP, oldR);
+          cout << "...becomes "; pWrite(strat->S[i]);
+        }
+        //strat->P.p = prMoveR(strat->P.p, oldR, dynR);
+        cout << "new poly "; p_Write(strat->P.p, oldR);
+        poly oldP = strat->P.p;
+        strat->P.p = prShallowCopyR(oldP, oldR, dynR);
+        if (strat->tailBin != NULL) { omFree(strat->tailBin); strat->tailBin = NULL; }
+        p_Setm(strat->P.p, dynR);
+        p_ShallowDelete(&oldP, oldR);
+        strat->P.FDeg = strat->P.pFDeg();
+        strat->P.sev = p_GetShortExpVector(strat->P.p, dynR);
+        strat->P.tailRing = dynR;
+        strat->P.pNorm();
+        cout << "becomes "; pWrite(strat->P.p);
+        CurrentPolys.push_back(strat->P.p);
+        cout << "fixing " << IDELEMS(F) << " generators\n";
+        for (int i = 0; i < IDELEMS(F); ++i)
+        {
+          cout << "gen "; pWrite(F->m[i]);
+          //F->m[i] = prMoveR(F->m[i], oldR, dynR);
+          poly oldP = F->m[i];
+          F->m[i] = prShallowCopyR(oldP, oldR, dynR);
+          p_ShallowDelete(&oldP, oldR);
+          p_Setm(F->m[i], dynR);
+          cout << " becomes "; pWrite(F->m[i]);
+        }
+        cout << "fixing " << strat->Ll << " pairs\n";
+        for (int i = 0; i <= strat->Ll; ++i)
+        {
+          if ((strat->L)[i].p != NULL)
+          {
+            cout << "changing pair poly "; pWrite((strat->L)[i].p);
+            poly oldP = (strat->L)[i].p;
+            //if ((oldP != NULL) && ((strat->L)[i].p1 != NULL))
+            if ((strat->L)[i].p1 != NULL)
+            {
+              p_LmDelete(&oldP, oldR);
+              strat->L[i].p = ksCreateShortSpoly((strat->L)[i].p1, (strat->L)[i].p2, dynR);
+              pNext(strat->L[i].p) = strat->tail;
+            }
+            else
+            {
+              (strat->L)[i].p = prShallowCopyR(oldP, oldR, dynR);
+              p_ShallowDelete(&oldP, oldR);
+              p_Setm((strat->L)[i].p, dynR);
+            }
+            (strat->L)[i].FDeg = (strat->L)[i].pFDeg();
+            (strat->L)[i].sev = p_GetShortExpVector((strat->L)[i].p,dynR);
+            (strat->L)[i].tailRing = dynR;
+            cout << "to "; pWrite((strat->L)[i].p);
+          }
+          if ((strat->L)[i].lcm != NULL)
+          {
+            cout << "changing pair lcm "; pWrite((strat->L)[i].lcm);
+            poly oldP = (strat->L)[i].lcm;
+            if (!p_GetCoeff(oldP, oldR)) { p_SetCoeff(oldP, n_Init(1,dynR), dynR); }
+            (strat->L)[i].lcm = prShallowCopyR(oldP, oldR, dynR);
+            p_ShallowDelete(&oldP, oldR);
+            p_Setm((strat->L)[i].lcm, dynR);
+            cout << "to "; pWrite((strat->L)[i].lcm);
+          }
+        }
+        cout << "fixing " << strat->tl << " reducers\n";
+        for (int i = 0; i <= strat->tl; ++i)
+        {
+          cout << "reducer "; pWrite((strat->T)[i].p);
+          bool found = false;
+          for (int j = 0; !found && j <= strat->sl; ++j)
+            found = strat->S[j] == strat->T[i].p;
+          if (found)
+          { cout << "unchanged\n"; }
+          else
+          {
+            poly oldP = (strat->T)[i].p;
+            (strat->T)[i].p = prShallowCopyR(oldP, oldR, dynR);
+            (strat->T)[i].t_p = NULL;
+            p_ShallowDelete(&oldP, oldR);
+            p_Setm((strat->T)[i].p, dynR);
+            cout << "becomes "; pWrite((strat->T)[i].p);
+          }
+          (strat->T)[i].FDeg = (strat->T)[i].pFDeg();
+          (strat->T)[i].tailRing = dynR;
+        }
+        rDelete(oldR);
+        cout << "done\n";
+      } // end dynamic stuff
+
 #ifdef KDEBUG
       if (TEST_OPT_DEBUG){PrintS("new s:");strat->P.wrp();PrintLn();}
 #if MYTEST
@@ -1595,6 +1917,13 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 #endif /* KDEBUG */
     kTest_TS(strat);
   }
+  cout << "completed with basis:\n";
+  for (int i=0; i < strat->sl; ++i)
+  {
+    cout << '\t'; pWrite(strat->S[i]);
+  }
+  cout << "completed with ring:\n";
+  rWrite(currRing, true); cout << endl;
 #ifdef KDEBUG
 #if MYTEST
   PrintS("bba finish GB: currRing: "); rWrite(currRing);
@@ -1629,7 +1958,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   {
     completeReduce(strat);
 #ifdef HAVE_TAIL_RING
-    if (strat->completeReduce_retry)
+    if (strat->completeReduce_retry && !dynamic_algorithm)
     {
       // completeReduce needed larger exponents, retry
       // to reduce with S (instead of T)
@@ -1667,7 +1996,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 
   return (strat->Shdl);
 }
-ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
+ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic_algorithm)
 {
   // ring order stuff:
   // in sba we have (until now) two possibilities:
@@ -1773,7 +2102,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
 #endif /* KDEBUG */
 
 #ifdef HAVE_TAIL_RING
-  if(!idIs0(F) &&(!rField_is_Ring(currRing)))  // create strong gcd poly computes with tailring and S[i] ->to be fixed
+  if(!idIs0(F) &&(!rField_is_Ring(currRing)) && !dynamic_algorithm)  // create strong gcd poly computes with tailring and S[i] ->to be fixed
     kStratInitChangeTailRing(strat);
 #endif
   if (BVERBOSE(23))
@@ -2281,7 +2610,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat)
   {
     completeReduce(strat);
 #ifdef HAVE_TAIL_RING
-    if (strat->completeReduce_retry)
+    if (strat->completeReduce_retry && !dynamic_algorithm)
     {
       // completeReduce needed larger exponents, retry
       // to reduce with S (instead of T)
@@ -2550,7 +2879,7 @@ ideal kNF2 (ideal F,ideal Q,ideal q,kStrategy strat, int lazyReduce)
 ********************************************************************/
 void f5c (kStrategy strat, int& olddeg, int& minimcnt, int& hilbeledeg,
           int& hilbcount, int& srmax, int& lrmax, int& reduc, ideal Q,
-          intvec *w,intvec *hilb )
+          intvec *w,intvec *hilb, bool dynamic_algorithm )
 {
   int Ll_old, red_result = 1;
   int pos  = 0;
@@ -2601,7 +2930,7 @@ void f5c (kStrategy strat, int& olddeg, int& minimcnt, int& hilbeledeg,
   strat->sl = -1;
 #if 0
 //#ifdef HAVE_TAIL_RING
-  if(!rField_is_Ring())  // create strong gcd poly computes with tailring and S[i] ->to be fixed
+  if(!rField_is_Ring() && !dynamic_algorithm)  // create strong gcd poly computes with tailring and S[i] ->to be fixed
     kStratInitChangeTailRing(strat);
 #endif
   //enterpairs(pOne(),0,0,-1,strat,strat->tl);

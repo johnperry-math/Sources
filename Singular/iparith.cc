@@ -95,6 +95,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <vector>
+#include <kernel/GBEngine/dynamic_engine.h>
 
 lists rDecompose(const ring r);
 ring rCompose(const lists  L, const BOOLEAN check_comp=TRUE);
@@ -1640,6 +1641,7 @@ static BOOLEAN jjMAP(leftv res, leftv u, leftv v)
   leftv sl=NULL;
   if ((v->e==NULL)&&(v->name!=NULL))
   {
+    using Singular::map;
     map m=(map)u->Data();
     sl=iiMap(m,v->name);
   }
@@ -4291,6 +4293,7 @@ static BOOLEAN jjIDEAL_Ma(leftv res, leftv v)
 }
 static BOOLEAN jjIDEAL_Map(leftv res, leftv v)
 {
+  using Singular::map;
   map m=(map)v->CopyD(MAP_CMD);
   omFree((ADDRESS)m->preimage);
   m->preimage=NULL;
@@ -4714,6 +4717,7 @@ static BOOLEAN jjP2I(leftv res, leftv v)
 }
 static BOOLEAN jjPREIMAGE_R(leftv res, leftv v)
 {
+  using Singular::map;
   map mapping=(map)v->Data();
   syMake(res,omStrDup(mapping->preimage));
   return FALSE;
@@ -6165,6 +6169,7 @@ static BOOLEAN jjNEWSTRUCT3(leftv, leftv u, leftv v, leftv w)
 }
 static BOOLEAN jjPREIMAGE(leftv res, leftv u, leftv v, leftv w)
 {
+  using Singular::map;
   // handles preimage(r,phi,i) and kernel(r,phi)
   idhdl h;
   ring rr;
@@ -7747,6 +7752,37 @@ static Subexpr jjMakeSub(leftv e)
   r->start =(int)(long)e->Data();
   return r;
 }
+
+
+#include <iostream>
+static BOOLEAN jjHPOLY(leftv res, leftv v, leftv u)
+{
+  intvec *w=(intvec*)v->Data();
+  int d = (int)(long)u->Data();
+  poly result=HilbertPolynomial(w,d);
+  res->data = (char *)result;
+  return FALSE;
+}
+
+static BOOLEAN jjSELMON(leftv res, leftv arg)
+{
+  ideal I = (ideal )(arg->Data());
+  vector<poly> currLPPs;
+  vector<poly> currPolys;
+  skeleton skel(currRing->N);
+  for (unsigned int i = 0; i < IDELEMS(I); ++i)
+  {
+    cout << "trying "; pWrite(I->m[i]); cout << endl;
+    SelectMonomial(I->m[i], currLPPs, currPolys, skel, ORD_HILBERT_THEN_DEG);
+    cout << "finished\n";
+  }
+  cout << "creating result\n";
+  ideal J = idInit(currLPPs.size());
+  for (unsigned int i = 0; i < currLPPs.size(); ++i) { J->m[i] = currLPPs[i]; }
+  res->data = (char *)J;
+  return FALSE;
+}
+
 #define D(A)    (A)
 #define NULL_VAL NULL
 #define IPARITH

@@ -395,7 +395,9 @@ void yyerror(const char * fmt)
      RETURN = 384,
      PARAMETER = 385,
      SYSVAR = 386,
-     UMINUS = 387
+     UMINUS = 387,
+     HPOLY_CMD = 388,
+     SELMON_CMD = 389
    };
 #endif
 
@@ -852,7 +854,8 @@ static const char *const yytname[] =
   "orderelem", "OrderingList", "ordering", "cmdeq", "mat_cmd", "filecmd",
   "$@2", "helpcmd", "examplecmd", "exportcmd", "killcmd", "listcmd",
   "ringcmd1", "ringcmd", "scriptcmd", "setrings", "setringcmd", "typecmd",
-  "ifcmd", "whilecmd", "forcmd", "proccmd", "parametercmd", "returncmd", 0
+  "ifcmd", "whilecmd", "forcmd", "proccmd", "parametercmd", "returncmd",
+  "HPOLY_CMD", "SELMON_CMD", 0
 };
 #endif
 

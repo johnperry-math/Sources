@@ -167,7 +167,9 @@
      RETURN = 384,
      PARAMETER = 385,
      SYSVAR = 386,
-     UMINUS = 387
+     UMINUS = 387,
+     HPOLY_CMD = 388,
+     SELMON_CMD = 389
    };
 #endif
 

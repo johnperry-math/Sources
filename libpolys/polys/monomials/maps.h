@@ -11,8 +11,9 @@
 //#include <kernel/ideals.h>
 
 struct sip_smap;
+namespace Singular{
 typedef struct sip_smap *         map;
-
+};
 // poly maEval(map theMap, poly p, ring dst_ring, nMapFunc nMap, ideal s=NULL);
 poly maEval(map theMap, poly p,ring preimage_r,nMapFunc nMap, ideal s, const ring dst_r);
 
