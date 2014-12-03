@@ -7,6 +7,7 @@
 #include <kernel/combinatorics/hilb.h>
 #include <kernel/combinatorics/stairc.h>
 #include <kernel/ideals.h>
+#include <kernel/GBEngine/kutil.h>
 #include <polys/monomials/p_polys.h>
 
 #include "skeleton.h"
@@ -48,7 +49,7 @@ extern ring currRing;
 */
 enum DynamicHeuristic
 {
-  ORD_HILBERT_THEN_DEG, DEG_THEN_ORD_HILBERT,
+  ORD_HILBERT_THEN_LEX, ORD_HILBERT_THEN_DEG, DEG_THEN_ORD_HILBERT,
   GRAD_HILB_THEN_DEG, DEG_THEN_GRAD_HILB,
   SIGNATURE_HILBERT, SIGNATURE_GRAD_HILB, SIGNATURE_DEG, MIN_CRIT_PAIRS
 };
@@ -138,7 +139,9 @@ void ConstraintsForNewPP(
 void SelectMonomial(
     poly &r,                          // changes
     vector<poly> &CurrentLPPs,      // changes
-    const vector<poly> &CurrentPolys, // changes   
+    //const vector<poly> &CurrentPolys,
+    polyset CurrentPolys,
+    int numPolys,
     skeleton & currSkel,                // possibly changes
     DynamicHeuristic method = ORD_HILBERT_THEN_DEG
 );

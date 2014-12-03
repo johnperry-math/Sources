@@ -259,6 +259,11 @@ public:
   // modify
 
   /**
+    Simplifies the ray by dividing its components by the least common denominator.
+  */
+  void simplify_ray();
+
+  /**
     Adds a constraint that is claimed to be active, and returns `true`.
     If the optional boolean argument is set to `true` (default is `false`),
     then it first checks whether the constraint really is active.

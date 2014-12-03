@@ -10,82 +10,30 @@
 #include <iostream>
 using std::cout; using std::endl;
 
-#include <list>
-using std::list;
-
 ring QQt = NULL;
 
-bool LessByHilbert (const PPWithIdeal &a, const PPWithIdeal &b)
-{
-  bool result;
-  ring Rx = currRing;
-  int n = Rx->N;
-  // first check the coefficients of the Hilbert polynomial
-  poly HPdiff = p_Minus_mm_Mult_qq(p_Copy(a.getHilbertPolynomial(), QQt), p_One(QQt), b.getHilbertPolynomial(), QQt);
-  if (HPdiff != NULL)
-    result = !(n_IsZero(p_GetCoeff(HPdiff, QQt), QQt) || n_GreaterZero(p_GetCoeff(HPdiff, QQt), QQt));
-  else // use Hilbert series
+struct LessByHilbert {
+  bool operator () (const PPWithIdeal &a, const PPWithIdeal &b)
   {
-    intvec * h1 = a.getHilbertNumerator();
-    intvec * h2 = b.getHilbertNumerator();
-    int i = 1;
-    for ( /* already initialized */ ;
-         i < h1->length() && i < h2->length() && (*h1)[i] == (*h2)[i];
-         i++)
-    { /* taken care of in loop */ }
-    if (i >= h1->length())
+    bool result;
+    ring Rx = currRing;
+    int n = Rx->N;
+    // first check the coefficients of the Hilbert polynomial
+    poly HPdiff = p_Minus_mm_Mult_qq(p_Copy(a.getHilbertPolynomial(), QQt), p_One(QQt), b.getHilbertPolynomial(), QQt);
+    if (HPdiff != NULL)
+      result = !(n_IsZero(p_GetCoeff(HPdiff, QQt), QQt) || n_GreaterZero(p_GetCoeff(HPdiff, QQt), QQt));
+    else // use Hilbert series
     {
-      if (i >= h2->length())
+      intvec * h1 = a.getHilbertNumerator();
+      intvec * h2 = b.getHilbertNumerator();
+      int i = 1;
+      for ( /* already initialized */ ;
+           i < h1->length() && i < h2->length() && (*h1)[i] == (*h2)[i];
+           i++)
+      { /* taken care of in loop */ }
+      if (i >= h1->length())
       {
-        int i = 1;
-        while (i <= n && p_GetExp(a.getPP(),i,Rx) == p_GetExp(b.getPP(),i,Rx))
-          ++i;
-        if (i == n)
-          result = false;
-        else
-          result = p_GetExp(a.getPP(), i, Rx) < p_GetExp(b.getPP(), i, Rx);
-      }
-      else
-        result = true;
-    }
-    else
-    {
-      if (i > h2->length())
-        result = false;
-      else
-        result = (*h1)[i] < (*h2)[i];
-    }
-  }
-  return result;
-};
-
-bool LessByHilbertThenDegree(const PPWithIdeal &a, const PPWithIdeal &b)
-{
-  bool result;
-  ring Rx = currRing;
-  int n = Rx->N;
-  // first check the coefficients of the Hilbert polynomial
-  poly HPdiff = p_Minus_mm_Mult_qq(p_Copy(a.getHilbertPolynomial(), QQt), p_One(QQt), b.getHilbertPolynomial(), QQt);
-  if (HPdiff != NULL)
-    result = !(n_IsZero(p_GetCoeff(HPdiff, QQt), QQt) || n_GreaterZero(p_GetCoeff(HPdiff, QQt), QQt));
-  else // use Hilbert series
-  {
-    intvec * h1 = a.getHilbertNumerator();
-    intvec * h2 = b.getHilbertNumerator();
-    int i = 1;
-    for ( /* already initialized */ ;
-         i < h1->length() && i < h2->length() && (*h1)[i] == (*h2)[i];
-         i++)
-    { /* taken care of in loop */ }
-    if (i >= h1->length())
-    {
-      if (i >= h2->length())
-      {
-        if (p_WDegree(a.getPP(), Rx) < p_WDegree(b.getPP(), Rx))
-          result = true;
-        else if (p_WDegree(a.getPP(), Rx) > p_WDegree(b.getPP(), Rx))
-          result = false;
-        else
+        if (i >= h2->length())
         {
           int i = 1;
           while (i <= n && p_GetExp(a.getPP(),i,Rx) == p_GetExp(b.getPP(),i,Rx))
@@ -95,19 +43,19 @@ bool LessByHilbertThenDegree(const PPWithIdeal &a, const PPWithIdeal &b)
           else
             result = p_GetExp(a.getPP(), i, Rx) < p_GetExp(b.getPP(), i, Rx);
         }
+        else
+          result = true;
       }
       else
-        result = true;
+      {
+        if (i > h2->length())
+          result = false;
+        else
+          result = (*h1)[i] < (*h2)[i];
+      }
     }
-    else
-    {
-      if (i > h2->length())
-        result = false;
-      else
-        result = (*h1)[i] < (*h2)[i];
-    }
-  }
   return result;
+  }
 };
 
 /*poly monomial(int a, int *e, ring R)
@@ -190,10 +138,9 @@ void compatiblePP(
   poly currentLPP,            // the current LPP
   const set<poly> &allPPs,    // the monomials to consider;
                                       // some will be removed
-  const set<ray> &bndrys,     // known boundary vectors
-  set<poly> &result,           // returned as PPs for Hilbert function
+  const set<ray> &bndrys,             // known boundary vectors
+  set<poly> &result           // returned as PPs for Hilbert function
                                       // ("easy" (& efficient?) to extract exps
-  set<poly> &boundary_mons   // boundary monomials
 )
 {
   // get the exponent vector of the current LPP, insert it
@@ -205,8 +152,7 @@ void compatiblePP(
   p_GetExpV(currentLPP, a, Rx);
   for (unsigned long i = 1; i <= n; ++i) { along[i-1] = a[i]; }
   ray aray(n, along);
-  set<poly> initial_candidates;
-  initial_candidates.insert(currentLPP);
+  result.insert(currentLPP);
   // compare other monomials with LPP
   for (
         set<poly>::iterator b_ptr = allPPs.begin();
@@ -215,7 +161,7 @@ void compatiblePP(
       )
   {
     // take the dot product of each monomial's exponents with pp,
-    // add the ones that pass muster to initial_candidates
+    // add the ones that pass muster to result
     p_GetExpV(*b_ptr, b, Rx);
     for (unsigned long i = 1; i <= n; ++i) { along[i-1] = b[i]; }
     ray bray(n, along);
@@ -230,40 +176,11 @@ void compatiblePP(
       if ((*w_ptr) * bray > (*w_ptr) * aray)
       {
         // only need one success
-        initial_candidates.insert(*b_ptr);
+        result.insert(*b_ptr);
         searching = false;
       }
     }
   }
-  // second refinement: compare remaining monomials with each other
-  for (set<poly>::iterator p_ptr = initial_candidates.begin(); p_ptr != initial_candidates.end(); ++p_ptr)
-  {
-    p_GetExpV(*p_ptr, a, Rx);
-    for (unsigned long i = 1; i <= n; ++i) { along[i-1] = a[i]; }
-    ray pray(n, along);
-    bool cleared_the_hurdle = false;
-    for (set<ray>::iterator w_ptr = bndrys.begin();
-         !cleared_the_hurdle && w_ptr != bndrys.end(); ++w_ptr)
-    {
-      bool maybe_this_vector = true;
-      ray w = *w_ptr;
-      for (set<poly>::iterator q_ptr = initial_candidates.begin();
-           maybe_this_vector && !cleared_the_hurdle && q_ptr != initial_candidates.end(); ++q_ptr)
-        if (*p_ptr != *q_ptr)
-        {
-          p_GetExpV(*q_ptr, b, Rx);
-          for (unsigned long i = 1; i <= n; ++i) { along[i-1] = b[i]; }
-          ray qray(n, along);
-          // guard against invalid exclusions
-          unsigned long long wt = (*w_ptr) * qray;
-          if ((((*w_ptr) * pray) <= wt) && wt != 0) maybe_this_vector = false;
-        }
-      cleared_the_hurdle = maybe_this_vector;
-      if (!cleared_the_hurdle) boundary_mons.insert(*p_ptr);
-    }
-    if (cleared_the_hurdle) result.insert(*p_ptr);
-  }
-  //result = initial_candidates;
   delete [] a; delete [] b; delete [] along;
 }
 
@@ -385,7 +302,7 @@ void SelectMonomial(
     DynamicHeuristic method
 )
 {
-  cout << "current ring: "; rWrite(currRing); cout << endl;
+  cout << "current ring: "; rWrite(currRing);
   cout << "entering selmon with "; pWrite(r); cout << endl;
   cout << "skeleton before: " << currSkel << endl;
   ring Rx = currRing;
@@ -393,7 +310,7 @@ void SelectMonomial(
   vector<unsigned long long> ord;
   for (unsigned long i = 0; i < w.get_dimension(); ++i) { ord.push_back(w[i]); }
   poly currentLPP = p_Head(r, Rx);
-  set<poly> allPPs, boundaryPPs, compatiblePPs;
+  set<poly> compatiblePPs, allPPs;
   // transform monomials into exponent vectors
   for (
        poly titer = r;
@@ -407,13 +324,15 @@ void SelectMonomial(
   }
   // loop through all exponent vectors
   cout << allPPs.size() << " possible monomials\n";
-  compatiblePP(currentLPP, allPPs, currSkel.get_rays(), compatiblePPs, boundaryPPs);
+  compatiblePP(currentLPP, allPPs, currSkel.get_rays(), compatiblePPs);
   cout << compatiblePPs.size() << " compatible monomials\n";
-  for (set<poly>::iterator piter = compatiblePPs.begin(); piter != compatiblePPs.end(); ++piter)
-    pWrite(*piter);
+  for (set<poly>::iterator piter = compatiblePPs.begin(); piter != compatiblePPs.end(); ++piter) pWrite(*piter);
   // list possible future ideals, sort by Hilbert Function
   // using a set sorts the ideals automagically by appropriate DynamicHeuristics
-  list<PPWithIdeal> possibleIdealsBasic;
+  set<PPWithIdeal, LessByHilbert> possibleIdealsBasic;
+  //set<set<PPWithIdeal>, LessByGradedHilbert> possibleIdealsGraded;
+  //set<set<PPWithIdeal>, LessByPseudoSig> possibleIdealsPseudoSig;
+  //set<set<PPWithIdeal>, LessByVolume> possibleIdealsVolume;
   for (
        set<poly>::iterator piter = compatiblePPs.begin();
        piter != compatiblePPs.end();
@@ -422,35 +341,23 @@ void SelectMonomial(
   {
     poly t = *piter;
     PPWithIdeal newIdeal(*piter, CurrentLPPs, w, r);
-    possibleIdealsBasic.push_back(newIdeal);
+    possibleIdealsBasic.insert(newIdeal);
   }
-  switch(method)
-  {
-    case ORD_HILBERT_THEN_LEX: possibleIdealsBasic.sort(LessByHilbert); break;
-    case ORD_HILBERT_THEN_DEG: possibleIdealsBasic.sort(LessByHilbertThenDegree); break;
-    default: possibleIdealsBasic.sort(LessByHilbert);
-  }
-  list<PPWithIdeal>::iterator winner = possibleIdealsBasic.begin();
+  set<PPWithIdeal>::iterator winner = possibleIdealsBasic.begin();
   if (possibleIdealsBasic.size() != 1)
   {
     // test each combination of LPPs for consistency
     // one of them must work (current LPP, if nothing else -- see previous case) 
     bool searching = true;
-    set<poly> PPunion;
-    for (set<poly>::iterator piter = compatiblePPs.begin(); piter != compatiblePPs.end(); ++piter)
-      PPunion.insert(*piter);
-    for (set<poly>::iterator piter = boundaryPPs.begin(); piter != boundaryPPs.end(); ++piter)
-      PPunion.insert(*piter);
     for (
-         list<PPWithIdeal>::iterator siter = possibleIdealsBasic.begin();
+         set<PPWithIdeal>::iterator siter = possibleIdealsBasic.begin();
          searching && siter != possibleIdealsBasic.end();
          ++siter
         )
     {
       skeleton newSkeleton(currSkel);
       vector<constraint> newvecs;
-      //ConstraintsForNewPP(*siter, compatiblePPs, newvecs);
-      ConstraintsForNewPP(*siter, PPunion, newvecs);
+      ConstraintsForNewPP(*siter, compatiblePPs, newvecs);
       if (newSkeleton.ddm(newvecs))
       {
         //if (verifyAndModifyIfNecessary(newSkeleton, CurrentPolys))
@@ -466,14 +373,6 @@ void SelectMonomial(
         compatiblePPs.erase(siter->getPP());
     }
   }
-  else if (possibleIdealsBasic.size() == 1 && compatiblePPs.size() != 1)
-  {
-    vector<constraint> newvecs;
-    ConstraintsForNewPP(*(possibleIdealsBasic.begin()), compatiblePPs, newvecs);
-    currSkel.ddm(newvecs);
-    verifyAndModifyIfNecessary(currSkel, CurrentPolys, numPolys);
-  }
-    
   // set marked lpp
   //r->setMarkedLPP(winner->getPP());
   poly t = p_Copy_noCheck(winner->getPP(), Rx);

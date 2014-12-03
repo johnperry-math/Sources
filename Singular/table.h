@@ -278,7 +278,6 @@ struct sValCmd1 dArith1[]=
 ,{D(loNewtonP),    NEWTONPOLY_CMD,  IDEAL_CMD,      IDEAL_CMD     , ALLOW_PLURAL |ALLOW_RING}
 ,{D(jjWAIT1ST1),   WAIT1ST_CMD,     INT_CMD,        LIST_CMD      , ALLOW_PLURAL |ALLOW_RING}
 ,{D(jjWAITALL1),   WAITALL_CMD,     INT_CMD,        LIST_CMD      , ALLOW_PLURAL |ALLOW_RING}
-,{D(jjSELMON),    SELMON_CMD,     IDEAL_CMD,       IDEAL_CMD,   NO_PLURAL | ALLOW_RING | NO_ZERODIVISOR}
 ,{NULL_VAL,        0,               0,              0             , NO_PLURAL |NO_RING}
 };
 /*=================== operations with 2 arg.: table =================*/

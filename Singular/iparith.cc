@@ -7764,25 +7764,6 @@ static BOOLEAN jjHPOLY(leftv res, leftv v, leftv u)
   return FALSE;
 }
 
-static BOOLEAN jjSELMON(leftv res, leftv arg)
-{
-  ideal I = (ideal )(arg->Data());
-  vector<poly> currLPPs;
-  vector<poly> currPolys;
-  skeleton skel(currRing->N);
-  for (unsigned int i = 0; i < IDELEMS(I); ++i)
-  {
-    cout << "trying "; pWrite(I->m[i]); cout << endl;
-    SelectMonomial(I->m[i], currLPPs, currPolys, skel, ORD_HILBERT_THEN_DEG);
-    cout << "finished\n";
-  }
-  cout << "creating result\n";
-  ideal J = idInit(currLPPs.size());
-  for (unsigned int i = 0; i < currLPPs.size(); ++i) { J->m[i] = currLPPs[i]; }
-  res->data = (char *)J;
-  return FALSE;
-}
-
 #define D(A)    (A)
 #define NULL_VAL NULL
 #define IPARITH

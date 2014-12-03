@@ -150,6 +150,32 @@ ray::~ray()
   delete [] coords;
 }
 
+void ray::simplify_ray()
+{
+  ulonglong * w = coords;
+  ulonglong gcd = 0;
+  for (int i = 0; i < get_dimension(); ++i)
+  {
+    if (gcd == 0)
+      gcd = w[i];
+    else if (w[i] != 0)
+    {
+      ulonglong r = (gcd < w[i] ? gcd : w[i]);
+      ulonglong s = (gcd < w[i] ? w[i] : gcd);
+      while (r != 0)
+      {
+        ulonglong t = s % r;
+        s = r;
+        r = t;
+      }
+      gcd = s;
+    }
+  }
+  if (gcd > 1)
+    for (int i = 0; i < get_dimension(); ++i)
+      w[i] /= gcd;
+}
+
 long long ray::obtain_dot_product(const constraint &hyperplane) const
 {
   long long result = 0;
@@ -503,6 +529,7 @@ bool skeleton::ddm(const constraint &constraint)
       if (rays_above.find(u) != rays_above.end() and rays_below.find(v) != rays_below.end())
       {
         ray w = (u * constraint)*v - (v * constraint)*u; // overloaded * :-)
+        w.simplify_ray();
         w.add_active_constraint(constraint);
         w.find_and_add_active_constraints(constraints);
         rays_on.insert(w);
@@ -512,6 +539,7 @@ bool skeleton::ddm(const constraint &constraint)
       else if (rays_above.find(v) != rays_above.end() and rays_below.find(u) != rays_below.end())
       {
         ray w = (v * constraint)*u - (u * constraint)*v;
+        w.simplify_ray();
         w.add_active_constraint(constraint);
         w.find_and_add_active_constraints(constraints);
         rays_on.insert(w);
@@ -545,6 +573,7 @@ bool skeleton::ddm(const vector<constraint> &new_constraints)
 {
   // innocent until proven guilty
   bool consistent = true;
+  cout << "adding " << new_constraints.size() << "constraints\n";
   // process each constraint sequentially
   for (
         vector<const constraint>::iterator nciter = new_constraints.begin();
@@ -552,7 +581,7 @@ bool skeleton::ddm(const vector<constraint> &new_constraints)
         ++nciter
       )
   {
-    cout << "adding constraint " << *nciter << endl;
+    //cout << "adding constraint " << *nciter << endl;
     consistent = ddm(*nciter);
   }
   return consistent;

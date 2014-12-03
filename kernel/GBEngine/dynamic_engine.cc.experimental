@@ -10,82 +10,30 @@
 #include <iostream>
 using std::cout; using std::endl;
 
-#include <list>
-using std::list;
-
 ring QQt = NULL;
 
-bool LessByHilbert (const PPWithIdeal &a, const PPWithIdeal &b)
-{
-  bool result;
-  ring Rx = currRing;
-  int n = Rx->N;
-  // first check the coefficients of the Hilbert polynomial
-  poly HPdiff = p_Minus_mm_Mult_qq(p_Copy(a.getHilbertPolynomial(), QQt), p_One(QQt), b.getHilbertPolynomial(), QQt);
-  if (HPdiff != NULL)
-    result = !(n_IsZero(p_GetCoeff(HPdiff, QQt), QQt) || n_GreaterZero(p_GetCoeff(HPdiff, QQt), QQt));
-  else // use Hilbert series
+struct LessByHilbert {
+  bool operator () (const PPWithIdeal &a, const PPWithIdeal &b)
   {
-    intvec * h1 = a.getHilbertNumerator();
-    intvec * h2 = b.getHilbertNumerator();
-    int i = 1;
-    for ( /* already initialized */ ;
-         i < h1->length() && i < h2->length() && (*h1)[i] == (*h2)[i];
-         i++)
-    { /* taken care of in loop */ }
-    if (i >= h1->length())
+    bool result;
+    ring Rx = currRing;
+    int n = Rx->N;
+    // first check the coefficients of the Hilbert polynomial
+    poly HPdiff = p_Minus_mm_Mult_qq(p_Copy(a.getHilbertPolynomial(), QQt), p_One(QQt), b.getHilbertPolynomial(), QQt);
+    if (HPdiff != NULL)
+      result = !(n_IsZero(p_GetCoeff(HPdiff, QQt), QQt) || n_GreaterZero(p_GetCoeff(HPdiff, QQt), QQt));
+    else // use Hilbert series
     {
-      if (i >= h2->length())
+      intvec * h1 = a.getHilbertNumerator();
+      intvec * h2 = b.getHilbertNumerator();
+      int i = 1;
+      for ( /* already initialized */ ;
+           i < h1->length() && i < h2->length() && (*h1)[i] == (*h2)[i];
+           i++)
+      { /* taken care of in loop */ }
+      if (i >= h1->length())
       {
-        int i = 1;
-        while (i <= n && p_GetExp(a.getPP(),i,Rx) == p_GetExp(b.getPP(),i,Rx))
-          ++i;
-        if (i == n)
-          result = false;
-        else
-          result = p_GetExp(a.getPP(), i, Rx) < p_GetExp(b.getPP(), i, Rx);
-      }
-      else
-        result = true;
-    }
-    else
-    {
-      if (i > h2->length())
-        result = false;
-      else
-        result = (*h1)[i] < (*h2)[i];
-    }
-  }
-  return result;
-};
-
-bool LessByHilbertThenDegree(const PPWithIdeal &a, const PPWithIdeal &b)
-{
-  bool result;
-  ring Rx = currRing;
-  int n = Rx->N;
-  // first check the coefficients of the Hilbert polynomial
-  poly HPdiff = p_Minus_mm_Mult_qq(p_Copy(a.getHilbertPolynomial(), QQt), p_One(QQt), b.getHilbertPolynomial(), QQt);
-  if (HPdiff != NULL)
-    result = !(n_IsZero(p_GetCoeff(HPdiff, QQt), QQt) || n_GreaterZero(p_GetCoeff(HPdiff, QQt), QQt));
-  else // use Hilbert series
-  {
-    intvec * h1 = a.getHilbertNumerator();
-    intvec * h2 = b.getHilbertNumerator();
-    int i = 1;
-    for ( /* already initialized */ ;
-         i < h1->length() && i < h2->length() && (*h1)[i] == (*h2)[i];
-         i++)
-    { /* taken care of in loop */ }
-    if (i >= h1->length())
-    {
-      if (i >= h2->length())
-      {
-        if (p_WDegree(a.getPP(), Rx) < p_WDegree(b.getPP(), Rx))
-          result = true;
-        else if (p_WDegree(a.getPP(), Rx) > p_WDegree(b.getPP(), Rx))
-          result = false;
-        else
+        if (i >= h2->length())
         {
           int i = 1;
           while (i <= n && p_GetExp(a.getPP(),i,Rx) == p_GetExp(b.getPP(),i,Rx))
@@ -95,19 +43,72 @@ bool LessByHilbertThenDegree(const PPWithIdeal &a, const PPWithIdeal &b)
           else
             result = p_GetExp(a.getPP(), i, Rx) < p_GetExp(b.getPP(), i, Rx);
         }
+        else
+          result = true;
       }
       else
-        result = true;
+      {
+        if (i > h2->length())
+          result = false;
+        else
+          result = (*h1)[i] < (*h2)[i];
+      }
     }
-    else
-    {
-      if (i > h2->length())
-        result = false;
-      else
-        result = (*h1)[i] < (*h2)[i];
-    }
-  }
   return result;
+  }
+};
+
+struct LessByHilbertThenDegree {
+  bool operator () (const PPWithIdeal &a, const PPWithIdeal &b)
+  {
+    bool result;
+    ring Rx = currRing;
+    int n = Rx->N;
+    // first check the coefficients of the Hilbert polynomial
+    poly HPdiff = p_Minus_mm_Mult_qq(p_Copy(a.getHilbertPolynomial(), QQt), p_One(QQt), b.getHilbertPolynomial(), QQt);
+    if (HPdiff != NULL)
+      result = !(n_IsZero(p_GetCoeff(HPdiff, QQt), QQt) || n_GreaterZero(p_GetCoeff(HPdiff, QQt), QQt));
+    else // use Hilbert series
+    {
+      intvec * h1 = a.getHilbertNumerator();
+      intvec * h2 = b.getHilbertNumerator();
+      int i = 1;
+      for ( /* already initialized */ ;
+           i < h1->length() && i < h2->length() && (*h1)[i] == (*h2)[i];
+           i++)
+      { /* taken care of in loop */ }
+      if (i >= h1->length())
+      {
+        if (i >= h2->length())
+        {
+          if (p_WDegree(a.getPP(), Rx) < p_WDegree(b.getPP(), Rx))
+            result = true;
+          else if (p_WDegree(a.getPP(), Rx) > p_WDegree(b.getPP(), Rx))
+            result = false;
+          else
+          {
+            int i = 1;
+            while (i <= n && p_GetExp(a.getPP(),i,Rx) == p_GetExp(b.getPP(),i,Rx))
+              ++i;
+            if (i == n)
+              result = false;
+            else
+              result = p_GetExp(a.getPP(), i, Rx) < p_GetExp(b.getPP(), i, Rx);
+          }
+        }
+        else
+          result = true;
+      }
+      else
+      {
+        if (i > h2->length())
+          result = false;
+        else
+          result = (*h1)[i] < (*h2)[i];
+      }
+    }
+  return result;
+  }
 };
 
 /*poly monomial(int a, int *e, ring R)
@@ -413,7 +414,11 @@ void SelectMonomial(
     pWrite(*piter);
   // list possible future ideals, sort by Hilbert Function
   // using a set sorts the ideals automagically by appropriate DynamicHeuristics
-  list<PPWithIdeal> possibleIdealsBasic;
+  set<PPWithIdeal, LessByHilbert> possibleIdealsBasic;
+  set<PPWithIdeal, LessByHilbertThenDegree> possibleIdealsHilbertDegree;
+  //set<set<PPWithIdeal>, LessByGradedHilbert> possibleIdealsGraded;
+  //set<set<PPWithIdeal>, LessByPseudoSig> possibleIdealsPseudoSig;
+  //set<set<PPWithIdeal>, LessByVolume> possibleIdealsVolume;
   for (
        set<poly>::iterator piter = compatiblePPs.begin();
        piter != compatiblePPs.end();
@@ -422,15 +427,9 @@ void SelectMonomial(
   {
     poly t = *piter;
     PPWithIdeal newIdeal(*piter, CurrentLPPs, w, r);
-    possibleIdealsBasic.push_back(newIdeal);
+    possibleIdealsBasic.insert(newIdeal);
   }
-  switch(method)
-  {
-    case ORD_HILBERT_THEN_LEX: possibleIdealsBasic.sort(LessByHilbert); break;
-    case ORD_HILBERT_THEN_DEG: possibleIdealsBasic.sort(LessByHilbertThenDegree); break;
-    default: possibleIdealsBasic.sort(LessByHilbert);
-  }
-  list<PPWithIdeal>::iterator winner = possibleIdealsBasic.begin();
+  set<PPWithIdeal>::iterator winner = possibleIdealsBasic.begin();
   if (possibleIdealsBasic.size() != 1)
   {
     // test each combination of LPPs for consistency
@@ -442,7 +441,7 @@ void SelectMonomial(
     for (set<poly>::iterator piter = boundaryPPs.begin(); piter != boundaryPPs.end(); ++piter)
       PPunion.insert(*piter);
     for (
-         list<PPWithIdeal>::iterator siter = possibleIdealsBasic.begin();
+         set<PPWithIdeal>::iterator siter = possibleIdealsBasic.begin();
          searching && siter != possibleIdealsBasic.end();
          ++siter
         )

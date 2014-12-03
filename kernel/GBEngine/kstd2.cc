@@ -1477,7 +1477,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
   #include <iostream>
   ring dynR;
   vector<poly> CurrentLPPs;
-  vector<poly> CurrentPolys;
+  //vector<poly> CurrentPolys;
   skeleton skel(currRing->N);
   if (dynamic_algorithm)
   {
@@ -1502,12 +1502,12 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
     // coerce input polynomials
     for (int i = 0; i < IDELEMS(F); ++i)
     {
-      cout << "moving "; p_Write(F->m[i], oldR);
+      //cout << "moving "; p_Write(F->m[i], oldR);
       //F->m[i] = prMoveR(F->m[i], oldR, dynR);
       poly oldP = F->m[i];
       F->m[i] = prShallowCopyR(oldP, oldR, dynR);
       p_Setm(F->m[i], dynR);
-      cout << "to "; p_Write(F->m[i], dynR);
+      //cout << "to "; p_Write(F->m[i], dynR);
       p_ShallowDelete(&oldP, oldR);
     }
     if (Q != NULL)
@@ -1565,8 +1565,11 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
     if (test_PosInL!=NULL) strat->posInL=test_PosInL;
     kDebugPrint(strat);
   }
-  if (dynamic_algorithm) strat->tailRing = dynR;
-
+  if (dynamic_algorithm)
+  {
+    strat->tailRing = dynR;
+    strat->noTailReduction = false; // need to reduce tails
+  }
 
 #ifdef KDEBUG
   //kDebugPrint(strat);
@@ -1574,8 +1577,8 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
   /* compute------------------------------------------------------- */
   while (strat->Ll >= 0)
   {
-    cout << "looping in basis\n";
-    cout << "strat->P.p = "; pWrite(strat->P.p);
+    //cout << "looping in basis\n";
+    //cout << "strat->P.p = "; pWrite(strat->P.p);
     #ifdef KDEBUG
       loop_count++;
       if (TEST_OPT_DEBUG) messageSets(strat);
@@ -1651,6 +1654,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
                 &olddeg,&reduc,strat, red_result);
 
       /* reduction of the element choosen from L */
+      if (dynamic_algorithm) strat->P.FDeg = strat->P.pFDeg();
       red_result = strat->red(&strat->P,strat);
       if (errorreported)  break;
     }
@@ -1696,7 +1700,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
       else
       {
         strat->P.pNorm();
-        if ((TEST_OPT_REDSB)||(TEST_OPT_REDTAIL))
+        if ((TEST_OPT_REDSB)||(TEST_OPT_REDTAIL)||(dynamic_algorithm))
           strat->P.p = redtailBba(&(strat->P),pos-1,strat, withT);
       }
 
@@ -1704,13 +1708,15 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
       if (dynamic_algorithm)
       {
         cout << "selecting monomial for "; p_Write(strat->P.p, dynR);
-        SelectMonomial(strat->P.p, CurrentLPPs, CurrentPolys, skel, ORD_HILBERT_THEN_DEG);
-        cout << "selected\n";
+        //SelectMonomial(strat->P.p, CurrentLPPs, strat->S, strat->sl, skel, ORD_HILBERT_THEN_LEX);
+        SelectMonomial(strat->P.p, CurrentLPPs, strat->S, strat->sl, skel, ORD_HILBERT_THEN_DEG);
+        //cout << "selected\n";
         ray new_weight = ray_sum(skel.get_rays());
+        new_weight.simplify_ray();
         cout << "have ray " << new_weight << "\n";
         // adjust currRing
-       int n = dynR->N;
-        cout << "adjusting weights\n";
+        int n = dynR->N;
+        //cout << "adjusting weights\n";
         /*ring tmp = rCopy(dynR);
         rDelete(dynR);
         dynR = tmp;*/
@@ -1724,11 +1730,11 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
         ring oldR = dynR;
         dynR = new_dynamic_ring_from_old(oldR, wvhdl);
         rChangeCurrRing(dynR);
-        cout << "changing current ring\n";
+        //cout << "changing current ring\n";
         strat->tailRing = dynR;
         strat->P.tailRing = dynR;
         // coerce polys
-        cout << "fixing LPPs\n";
+        //cout << "fixing LPPs\n";
         for (vector<poly>::iterator pp = CurrentLPPs.begin(); pp != CurrentLPPs.end(); ++pp)
         {
           //*pp = prMoveR(*pp, oldR, dynR);
@@ -1737,30 +1743,45 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
           p_Setm(*pp, dynR);
           p_ShallowDelete(&oldP, oldR);
         }
-        cout << "fixing " << CurrentPolys.size() << " polys\n";
-        for (int i = 0; i < CurrentLPPs.size() - 1; ++i)
+        //cout << "fixing " << CurrentPolys.size() << " polys\n";
+        //cout << "fixing " << strat->sl << " polys\n";
+        //for (int i = 0; i < CurrentLPPs.size() - 1; ++i)
+        for (int i = 0; i <= strat->sl; ++i)
         {
-          cout << "poly " << i << ' '; pWrite(strat->S[i]);
+          //cout << "poly " << i << ' '; pWrite(strat->S[i]);
           //strat->S[i] = prMoveR(strat->S[i], oldR, dynR);
           poly oldP = strat->S[i];
           strat->S[i] = prShallowCopyR(oldP, oldR, dynR);
+          p_Setm(strat->S[i], dynR);
+          strat->sevS[i] = pGetShortExpVector(strat->S[i]);
+          //for (int j = 0; j < CurrentPolys.size(); ++j)
+          //  if (CurrentPolys[j] == oldP)
+          //    CurrentPolys[j] = strat->S[i];
           for (int j = 0; j <= strat->tl; ++j)
             if (strat->T[j].p == oldP)
+            {
               strat->T[j].p = strat->S[i];
-          cout << "hold\n";
-          for (int j = 0; j <= strat->sl; ++j)
+              strat->sevT[i] = pGetShortExpVector(strat->T[i].p);
+            }
+          //cout << "hold\n";
+          for (int j = 0; j <= strat->Ll; ++j)
           {
             if (strat->L[j].p1 == oldP)
+            {
+              //cout << "strat->L[" << j << "] changes from "; pWrite(oldP); cout << "to "; pWrite(strat->S[i]);
               strat->L[j].p1 = strat->S[i];
+            }
             if (strat->L[j].p2 == oldP)
+            {
+              //cout << "strat->L[" << j << "] changes from "; pWrite(oldP); cout << "to "; pWrite(strat->S[i]);
               strat->L[j].p2 = strat->S[i];
+            }
           }
-          p_Setm(strat->S[i], dynR);
           p_ShallowDelete(&oldP, oldR);
-          cout << "...becomes "; pWrite(strat->S[i]);
+          //cout << "...becomes "; pWrite(strat->S[i]);
         }
         //strat->P.p = prMoveR(strat->P.p, oldR, dynR);
-        cout << "new poly "; p_Write(strat->P.p, oldR);
+        //cout << "new poly "; p_Write(strat->P.p, oldR);
         poly oldP = strat->P.p;
         strat->P.p = prShallowCopyR(oldP, oldR, dynR);
         if (strat->tailBin != NULL) { omFree(strat->tailBin); strat->tailBin = NULL; }
@@ -1769,26 +1790,29 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
         strat->P.FDeg = strat->P.pFDeg();
         strat->P.sev = p_GetShortExpVector(strat->P.p, dynR);
         strat->P.tailRing = dynR;
-        strat->P.pNorm();
-        cout << "becomes "; pWrite(strat->P.p);
-        CurrentPolys.push_back(strat->P.p);
-        cout << "fixing " << IDELEMS(F) << " generators\n";
+        p_Norm(strat->P.p, dynR);
+        //strat->P.pNorm();
+        //cout << "becomes "; pWrite(strat->P.p);
+        //CurrentPolys.push_back(strat->P.p);
+        //cout << "fixing " << IDELEMS(F) << " generators\n";
         for (int i = 0; i < IDELEMS(F); ++i)
         {
-          cout << "gen "; pWrite(F->m[i]);
+          //cout << "gen "; pWrite(F->m[i]);
           //F->m[i] = prMoveR(F->m[i], oldR, dynR);
           poly oldP = F->m[i];
           F->m[i] = prShallowCopyR(oldP, oldR, dynR);
           p_ShallowDelete(&oldP, oldR);
           p_Setm(F->m[i], dynR);
-          cout << " becomes "; pWrite(F->m[i]);
+          //cout << " becomes "; pWrite(F->m[i]);
         }
-        cout << "fixing " << strat->Ll << " pairs\n";
+        //cout << "fixing " << strat->Ll << " pairs\n";
         for (int i = 0; i <= strat->Ll; ++i)
         {
           if ((strat->L)[i].p != NULL)
           {
-            cout << "changing pair poly "; pWrite((strat->L)[i].p);
+            //cout << "changing pair poly " << i << ' '; pWrite((strat->L)[i].p);
+            //cout << "of "; pWrite(strat->L[i].p1);
+            //cout << "and "; pWrite(strat->L[i].p2);
             poly oldP = (strat->L)[i].p;
             //if ((oldP != NULL) && ((strat->L)[i].p1 != NULL))
             if ((strat->L)[i].p1 != NULL)
@@ -1803,26 +1827,27 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
               p_ShallowDelete(&oldP, oldR);
               p_Setm((strat->L)[i].p, dynR);
             }
+            if (strat->L[i].sev != 0) strat->L[i].sev = p_GetShortExpVector(strat->L[i].p, dynR);
             (strat->L)[i].FDeg = (strat->L)[i].pFDeg();
             (strat->L)[i].sev = p_GetShortExpVector((strat->L)[i].p,dynR);
             (strat->L)[i].tailRing = dynR;
-            cout << "to "; pWrite((strat->L)[i].p);
+            //cout << "to "; pWrite((strat->L)[i].p);
           }
           if ((strat->L)[i].lcm != NULL)
           {
-            cout << "changing pair lcm "; pWrite((strat->L)[i].lcm);
+            //cout << "changing pair lcm " << i << ' '; pWrite((strat->L)[i].lcm);
             poly oldP = (strat->L)[i].lcm;
             if (!p_GetCoeff(oldP, oldR)) { p_SetCoeff(oldP, n_Init(1,dynR), dynR); }
             (strat->L)[i].lcm = prShallowCopyR(oldP, oldR, dynR);
             p_ShallowDelete(&oldP, oldR);
             p_Setm((strat->L)[i].lcm, dynR);
-            cout << "to "; pWrite((strat->L)[i].lcm);
+            //cout << "to "; pWrite((strat->L)[i].lcm);
           }
         }
-        cout << "fixing " << strat->tl << " reducers\n";
+        //cout << "fixing " << strat->tl << " reducers\n";
         for (int i = 0; i <= strat->tl; ++i)
         {
-          cout << "reducer "; pWrite((strat->T)[i].p);
+          //cout << "reducer " << i << ' '; pWrite((strat->T)[i].p);
           bool found = false;
           for (int j = 0; !found && j <= strat->sl; ++j)
             found = strat->S[j] == strat->T[i].p;
@@ -1832,16 +1857,30 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
           {
             poly oldP = (strat->T)[i].p;
             (strat->T)[i].p = prShallowCopyR(oldP, oldR, dynR);
-            (strat->T)[i].t_p = NULL;
-            p_ShallowDelete(&oldP, oldR);
             p_Setm((strat->T)[i].p, dynR);
-            cout << "becomes "; pWrite((strat->T)[i].p);
+            strat->sevT[i] = pGetShortExpVector(strat->T[i].p);
+            (strat->T)[i].t_p = NULL;
+            for (int j = 0; j <= strat->Ll; ++j)
+            {
+              if (strat->L[j].p1 == oldP)
+              {
+                //cout << "changing pair poly 1  of " << j << ' '; pWrite(oldP);
+                strat->L[j].p1 = strat->T[i].p;
+              }
+              if (strat->L[j].p2 == oldP)
+              {
+                //cout << "changing pair poly 2 of " << j << ' '; pWrite(oldP);
+                strat->L[j].p2 = strat->T[i].p;
+              }
+            }
+            p_ShallowDelete(&oldP, oldR);
+            //cout << "becomes "; pWrite((strat->T)[i].p);
           }
           (strat->T)[i].FDeg = (strat->T)[i].pFDeg();
           (strat->T)[i].tailRing = dynR;
         }
         rDelete(oldR);
-        cout << "done\n";
+        //cout << "done\n";
       } // end dynamic stuff
 
 #ifdef KDEBUG
@@ -1954,7 +1993,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
   }
 
   /* complete reduction of the standard basis--------- */
-  if (TEST_OPT_REDSB)
+  if (TEST_OPT_REDSB || dynamic_algorithm)
   {
     completeReduce(strat);
 #ifdef HAVE_TAIL_RING
