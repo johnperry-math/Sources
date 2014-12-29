@@ -336,10 +336,10 @@ struct ip_sring
 ////////// DEPRECATED
 /////// void   rChangeCurrRing(ring r);
 
-ring   rDefault(int ch, int N, char **n);
-ring   rDefault(const coeffs cf, int N, char **n);
-ring   rDefault(int ch, int N, char **n,int ord_size, int *ord, int *block0, int *block1, int **wvhdl=NULL);
-ring   rDefault(const coeffs cf, int N, char **n,int ord_size, int *ord, int *block0, int *block1, int **wvhdl=NULL);
+ring   rDefault(int ch, int N, const char **n);
+ring   rDefault(const coeffs cf, int N, const char **n);
+ring   rDefault(int ch, int N, const char **n,int ord_size, int *ord, int *block0, int *block1, int **wvhdl=NULL);
+ring   rDefault(const coeffs cf, int N, const char **n,int ord_size, int *ord, int *block0, int *block1, int **wvhdl=NULL);
 
 // #define rIsRingVar(A) r_IsRingVar(A,currRing)
 int    r_IsRingVar(const char *n, char**names, int N);

@@ -5202,7 +5202,7 @@ ring rInit(sleftv* pn, sleftv* rv, sleftv* ord)
 
         TransExtInfo extParam;
 
-        extParam.r = rDefault( ch, pars, names); // Q/Zp [ p_1, ... p_pars ]
+        extParam.r = rDefault( ch, pars, ((const char **)names)); // Q/Zp [ p_1, ... p_pars ]
         for(int i=pars-1; i>=0;i--)
         {
           omFree(names[i]);

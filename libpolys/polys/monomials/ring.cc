@@ -111,7 +111,7 @@ static void rOptimizeLDeg(ring r);
 //  return FALSE;
 //}
 
-ring rDefault(const coeffs cf, int N, char **n,int ord_size, int *ord, int *block0, int *block1, int** wvhdl)
+ring rDefault(const coeffs cf, int N, const char **n,int ord_size, int *ord, int *block0, int *block1, int** wvhdl)
 {
   assume( cf != NULL);
   ring r=(ring) omAlloc0Bin(sip_sring_bin);
@@ -138,7 +138,7 @@ ring rDefault(const coeffs cf, int N, char **n,int ord_size, int *ord, int *bloc
   rComplete(r);
   return r;
 }
-ring rDefault(int ch, int N, char **n,int ord_size, int *ord, int *block0, int *block1,int ** wvhdl)
+ring rDefault(int ch, int N, const char **n,int ord_size, int *ord, int *block0, int *block1,int ** wvhdl)
 {
   coeffs cf;
   if (ch==0) cf=nInitChar(n_Q,NULL);
@@ -146,7 +146,7 @@ ring rDefault(int ch, int N, char **n,int ord_size, int *ord, int *block0, int *
   assume( cf != NULL);
   return rDefault(cf,N,n,ord_size,ord,block0,block1,wvhdl);
 }
-ring   rDefault(const coeffs cf, int N, char **n)
+ring   rDefault(const coeffs cf, int N, const char **n)
 {
   assume( cf != NULL);
   /*order: lp,0*/
@@ -163,7 +163,7 @@ ring   rDefault(const coeffs cf, int N, char **n)
   return rDefault(cf,N,n,2,order,block0,block1);
 }
 
-ring rDefault(int ch, int N, char **n)
+ring rDefault(int ch, int N, const char **n)
 {
   coeffs cf;
   if (ch==0) cf=nInitChar(n_Q,NULL);

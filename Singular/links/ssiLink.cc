@@ -489,13 +489,13 @@ ring ssiReadRing(const ssiInfo *d)
   {
     ring r=NULL;
     if (ch>=0) /* Q, Z/p */
-      r=rDefault(ch,N,names,num_ord,ord,block0,block1,wvhdl);
+      r=rDefault(ch,N,((const char **)names),num_ord,ord,block0,block1,wvhdl);
     else if (ch==-1) /* trans ext. */
     {
       TransExtInfo T;
       T.r=ssiReadRing(d);
       coeffs cf=nInitChar(n_transExt,&T);
-      r=rDefault(cf,N,names,num_ord,ord,block0,block1,wvhdl);
+      r=rDefault(cf,N,((const char **)names),num_ord,ord,block0,block1,wvhdl);
     }
     else if (ch==-2) /* alg ext. */
     {
@@ -504,7 +504,7 @@ ring ssiReadRing(const ssiInfo *d)
       T.r->qideal=idInit(1,1);
       T.r->qideal->m[0]=ssiReadPoly_R(d,T.r);
       coeffs cf=nInitChar(n_algExt,&T);
-      r=rDefault(cf,N,names,num_ord,ord,block0,block1,wvhdl);
+      r=rDefault(cf,N,((const char **)names),num_ord,ord,block0,block1,wvhdl);
     }
     else
     {

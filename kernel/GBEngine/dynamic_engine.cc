@@ -122,7 +122,7 @@ poly var_univariate(ring R)
 poly constant(number a, ring R)
 { poly p = p_One(R); p_SetCoeff(p, a, R); p_Setm(p, R); return p; }
 
-char * tstring = "t";
+const char * tstring = "t";
 
 /**
   Computes C(t+a,b).
@@ -235,6 +235,7 @@ void compatiblePP(
       }
     }
   }
+  result = initial_candidates;
   // second refinement: compare remaining monomials with each other
   for (set<poly>::iterator p_ptr = initial_candidates.begin(); p_ptr != initial_candidates.end(); ++p_ptr)
   {
@@ -263,6 +264,10 @@ void compatiblePP(
     }
     if (cleared_the_hurdle) result.insert(*p_ptr);
   }
+  //cout << "boundary monomials:\n";
+  //for (set<poly>::iterator piter = boundary_mons.begin(); piter != boundary_mons.end(); ++piter) pWrite(*piter);
+  //cout << "compatible monomials:\n";
+  //for (set<poly>::iterator piter = result.begin(); piter != result.end(); ++piter) pWrite(*piter);
   //result = initial_candidates;
   delete [] a; delete [] b; delete [] along;
 }
@@ -382,6 +387,7 @@ void SelectMonomial(
     polyset CurrentPolys,
     int numPolys,
     skeleton & currSkel,                // possibly changes
+    bool &ordering_changed,
     DynamicHeuristic method
 )
 {
@@ -420,8 +426,7 @@ void SelectMonomial(
        ++piter
       )
   {
-    poly t = *piter;
-    PPWithIdeal newIdeal(*piter, CurrentLPPs, w, r);
+    PPWithIdeal newIdeal(*piter, CurrentLPPs, w);
     possibleIdealsBasic.push_back(newIdeal);
   }
   switch(method)
@@ -431,11 +436,11 @@ void SelectMonomial(
     default: possibleIdealsBasic.sort(LessByHilbert);
   }
   list<PPWithIdeal>::iterator winner = possibleIdealsBasic.begin();
+  bool searching = true;
   if (possibleIdealsBasic.size() != 1)
   {
     // test each combination of LPPs for consistency
     // one of them must work (current LPP, if nothing else -- see previous case) 
-    bool searching = true;
     set<poly> PPunion;
     for (set<poly>::iterator piter = compatiblePPs.begin(); piter != compatiblePPs.end(); ++piter)
       PPunion.insert(*piter);
@@ -456,8 +461,8 @@ void SelectMonomial(
         //if (verifyAndModifyIfNecessary(newSkeleton, CurrentPolys))
         if (verifyAndModifyIfNecessary(newSkeleton, CurrentPolys, numPolys))
         {
-          currSkel = newSkeleton;
           searching = false;
+          currSkel = newSkeleton;
           winner = siter;
         }
       }
@@ -479,12 +484,17 @@ void SelectMonomial(
   poly t = p_Copy_noCheck(winner->getPP(), Rx);
   t->next = NULL;
   CurrentLPPs.push_back(t);
-  // TODO: delete elements of allPPs (not clear how: elements are in a set
-  cout << "finished with ";
+  // TODO: delete elements of allPPs (not clear how: elements are in a set)
+  ray new_weight = ray_sum(currSkel.get_rays());
+  new_weight.simplify_ray();
+  for (int i = 0; i < (int )(new_weight.get_dimension()); ++i)
+    ordering_changed = ordering_changed or ((int )new_weight[i]) != Rx->wvhdl[0][i];
+  cout << "ordering changed? " << ordering_changed << endl;
+  /*cout << "finished with ";
   for (unsigned long i = 0; i < CurrentLPPs.size(); ++i) pWrite(CurrentLPPs[i]);
   cout << endl;
   cout << "skeleton after:\n";
-  cout << currSkel;
+  cout << currSkel; */
   cout << "returning from selmon\n";
 }
 

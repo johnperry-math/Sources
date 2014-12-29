@@ -1,0 +1,239 @@
+13,15d12
+< #include <list>
+< using std::list;
+< 
+18,27c15,16
+< bool LessByHilbert (const PPWithIdeal &a, const PPWithIdeal &b)
+< {
+<   bool result;
+<   ring Rx = currRing;
+<   int n = Rx->N;
+<   // first check the coefficients of the Hilbert polynomial
+<   poly HPdiff = p_Minus_mm_Mult_qq(p_Copy(a.getHilbertPolynomial(), QQt), p_One(QQt), b.getHilbertPolynomial(), QQt);
+<   if (HPdiff != NULL)
+<     result = !(n_IsZero(p_GetCoeff(HPdiff, QQt), QQt) || n_GreaterZero(p_GetCoeff(HPdiff, QQt), QQt));
+<   else // use Hilbert series
+---
+> struct LessByHilbert {
+>   bool operator () (const PPWithIdeal &a, const PPWithIdeal &b)
+29,38c18,34
+<     intvec * h1 = a.getHilbertNumerator();
+<     intvec * h2 = b.getHilbertNumerator();
+<     int i = 1;
+<     for ( /* already initialized */ ;
+<          i < h1->length() && i < h2->length() && (*h1)[i] == (*h2)[i];
+<          i++)
+<     { /* taken care of in loop */ }
+<     if (i >= h1->length())
+<     {
+<       if (i >= h2->length())
+---
+>     bool result;
+>     ring Rx = currRing;
+>     int n = Rx->N;
+>     // first check the coefficients of the Hilbert polynomial
+>     poly HPdiff = p_Minus_mm_Mult_qq(p_Copy(a.getHilbertPolynomial(), QQt), p_One(QQt), b.getHilbertPolynomial(), QQt);
+>     if (HPdiff != NULL)
+>       result = !(n_IsZero(p_GetCoeff(HPdiff, QQt), QQt) || n_GreaterZero(p_GetCoeff(HPdiff, QQt), QQt));
+>     else // use Hilbert series
+>     {
+>       intvec * h1 = a.getHilbertNumerator();
+>       intvec * h2 = b.getHilbertNumerator();
+>       int i = 1;
+>       for ( /* already initialized */ ;
+>            i < h1->length() && i < h2->length() && (*h1)[i] == (*h2)[i];
+>            i++)
+>       { /* taken care of in loop */ }
+>       if (i >= h1->length())
+40,88c36
+<         int i = 1;
+<         while (i <= n && p_GetExp(a.getPP(),i,Rx) == p_GetExp(b.getPP(),i,Rx))
+<           ++i;
+<         if (i == n)
+<           result = false;
+<         else
+<           result = p_GetExp(a.getPP(), i, Rx) < p_GetExp(b.getPP(), i, Rx);
+<       }
+<       else
+<         result = true;
+<     }
+<     else
+<     {
+<       if (i > h2->length())
+<         result = false;
+<       else
+<         result = (*h1)[i] < (*h2)[i];
+<     }
+<   }
+<   return result;
+< };
+< 
+< bool LessByHilbertThenDegree(const PPWithIdeal &a, const PPWithIdeal &b)
+< {
+<   bool result;
+<   ring Rx = currRing;
+<   int n = Rx->N;
+<   // first check the coefficients of the Hilbert polynomial
+<   poly HPdiff = p_Minus_mm_Mult_qq(p_Copy(a.getHilbertPolynomial(), QQt), p_One(QQt), b.getHilbertPolynomial(), QQt);
+<   if (HPdiff != NULL)
+<     result = !(n_IsZero(p_GetCoeff(HPdiff, QQt), QQt) || n_GreaterZero(p_GetCoeff(HPdiff, QQt), QQt));
+<   else // use Hilbert series
+<   {
+<     intvec * h1 = a.getHilbertNumerator();
+<     intvec * h2 = b.getHilbertNumerator();
+<     int i = 1;
+<     for ( /* already initialized */ ;
+<          i < h1->length() && i < h2->length() && (*h1)[i] == (*h2)[i];
+<          i++)
+<     { /* taken care of in loop */ }
+<     if (i >= h1->length())
+<     {
+<       if (i >= h2->length())
+<       {
+<         if (p_WDegree(a.getPP(), Rx) < p_WDegree(b.getPP(), Rx))
+<           result = true;
+<         else if (p_WDegree(a.getPP(), Rx) > p_WDegree(b.getPP(), Rx))
+<           result = false;
+<         else
+---
+>         if (i >= h2->length())
+97a46,47
+>         else
+>           result = true;
+100,107c50,55
+<         result = true;
+<     }
+<     else
+<     {
+<       if (i > h2->length())
+<         result = false;
+<       else
+<         result = (*h1)[i] < (*h2)[i];
+---
+>       {
+>         if (i > h2->length())
+>           result = false;
+>         else
+>           result = (*h1)[i] < (*h2)[i];
+>       }
+109d56
+<   }
+110a58
+>   }
+193,194c141,142
+<   const set<ray> &bndrys,     // known boundary vectors
+<   set<poly> &result,           // returned as PPs for Hilbert function
+---
+>   const set<ray> &bndrys,             // known boundary vectors
+>   set<poly> &result           // returned as PPs for Hilbert function
+196d143
+<   set<poly> &boundary_mons   // boundary monomials
+208,209c155
+<   set<poly> initial_candidates;
+<   initial_candidates.insert(currentLPP);
+---
+>   result.insert(currentLPP);
+218c164
+<     // add the ones that pass muster to initial_candidates
+---
+>     // add the ones that pass muster to result
+233c179
+<         initial_candidates.insert(*b_ptr);
+---
+>         result.insert(*b_ptr);
+238,270d183
+<   // second refinement: compare remaining monomials with each other
+<   for (set<poly>::iterator p_ptr = initial_candidates.begin(); p_ptr != initial_candidates.end(); ++p_ptr)
+<   {
+<     p_GetExpV(*p_ptr, a, Rx);
+<     for (unsigned long i = 1; i <= n; ++i) { along[i-1] = a[i]; }
+<     ray pray(n, along);
+<     bool cleared_the_hurdle = false;
+<     for (set<ray>::iterator w_ptr = bndrys.begin();
+<          !cleared_the_hurdle && w_ptr != bndrys.end(); ++w_ptr)
+<     {
+<       bool maybe_this_vector = true;
+<       ray w = *w_ptr;
+<       for (set<poly>::iterator q_ptr = initial_candidates.begin();
+<            maybe_this_vector && !cleared_the_hurdle && q_ptr != initial_candidates.end(); ++q_ptr)
+<         if (*p_ptr != *q_ptr)
+<         {
+<           p_GetExpV(*q_ptr, b, Rx);
+<           for (unsigned long i = 1; i <= n; ++i) { along[i-1] = b[i]; }
+<           ray qray(n, along);
+<           // guard against invalid exclusions
+<           unsigned long long wt = (*w_ptr) * qray;
+<           if ((((*w_ptr) * pray) <= wt) && wt != 0) maybe_this_vector = false;
+<         }
+<       cleared_the_hurdle = maybe_this_vector;
+<       if (!cleared_the_hurdle) boundary_mons.insert(*p_ptr);
+<     }
+<     if (cleared_the_hurdle) result.insert(*p_ptr);
+<   }
+<   //cout << "boundary monomials:\n";
+<   //for (set<poly>::iterator piter = boundary_mons.begin(); piter != boundary_mons.end(); ++piter) pWrite(*piter);
+<   //cout << "compatible monomials:\n";
+<   //for (set<poly>::iterator piter = result.begin(); piter != result.end(); ++piter) pWrite(*piter);
+<   //result = initial_candidates;
+392c305
+<   cout << "current ring: "; rWrite(currRing); cout << endl;
+---
+>   cout << "current ring: "; rWrite(currRing);
+400c313
+<   set<poly> allPPs, boundaryPPs, compatiblePPs;
+---
+>   set<poly> compatiblePPs, allPPs;
+414c327
+<   compatiblePP(currentLPP, allPPs, currSkel.get_rays(), compatiblePPs, boundaryPPs);
+---
+>   compatiblePP(currentLPP, allPPs, currSkel.get_rays(), compatiblePPs);
+416,417c329
+<   for (set<poly>::iterator piter = compatiblePPs.begin(); piter != compatiblePPs.end(); ++piter)
+<     pWrite(*piter);
+---
+>   for (set<poly>::iterator piter = compatiblePPs.begin(); piter != compatiblePPs.end(); ++piter) pWrite(*piter);
+420c332,335
+<   list<PPWithIdeal> possibleIdealsBasic;
+---
+>   set<PPWithIdeal, LessByHilbert> possibleIdealsBasic;
+>   //set<set<PPWithIdeal>, LessByGradedHilbert> possibleIdealsGraded;
+>   //set<set<PPWithIdeal>, LessByPseudoSig> possibleIdealsPseudoSig;
+>   //set<set<PPWithIdeal>, LessByVolume> possibleIdealsVolume;
+429,435c344
+<     possibleIdealsBasic.push_back(newIdeal);
+<   }
+<   switch(method)
+<   {
+<     case ORD_HILBERT_THEN_LEX: possibleIdealsBasic.sort(LessByHilbert); break;
+<     case ORD_HILBERT_THEN_DEG: possibleIdealsBasic.sort(LessByHilbertThenDegree); break;
+<     default: possibleIdealsBasic.sort(LessByHilbert);
+---
+>     possibleIdealsBasic.insert(newIdeal);
+437c346
+<   list<PPWithIdeal>::iterator winner = possibleIdealsBasic.begin();
+---
+>   set<PPWithIdeal>::iterator winner = possibleIdealsBasic.begin();
+443,447d351
+<     set<poly> PPunion;
+<     for (set<poly>::iterator piter = compatiblePPs.begin(); piter != compatiblePPs.end(); ++piter)
+<       PPunion.insert(*piter);
+<     for (set<poly>::iterator piter = boundaryPPs.begin(); piter != boundaryPPs.end(); ++piter)
+<       PPunion.insert(*piter);
+449c353
+<          list<PPWithIdeal>::iterator siter = possibleIdealsBasic.begin();
+---
+>          set<PPWithIdeal>::iterator siter = possibleIdealsBasic.begin();
+456,457c360
+<       //ConstraintsForNewPP(*siter, compatiblePPs, newvecs);
+<       ConstraintsForNewPP(*siter, PPunion, newvecs);
+---
+>       ConstraintsForNewPP(*siter, compatiblePPs, newvecs);
+473,480d375
+<   else if (possibleIdealsBasic.size() == 1 && compatiblePPs.size() != 1)
+<   {
+<     vector<constraint> newvecs;
+<     ConstraintsForNewPP(*(possibleIdealsBasic.begin()), compatiblePPs, newvecs);
+<     currSkel.ddm(newvecs);
+<     verifyAndModifyIfNecessary(currSkel, CurrentPolys, numPolys);
+<   }
+<     

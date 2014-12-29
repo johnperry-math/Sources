@@ -64,7 +64,7 @@ poly HilbertPolynomial(intvec *, int);
 class PPWithIdeal
 {
   public:
-    PPWithIdeal(poly u, vector<poly> F, ray w, poly r)
+    PPWithIdeal(poly u, vector<poly> F, ray w)
     : t(p_Copy_noCheck(u,currRing)), ordering(w)
     {
       I = idInit(F.size() + 1);
@@ -143,6 +143,7 @@ void SelectMonomial(
     polyset CurrentPolys,
     int numPolys,
     skeleton & currSkel,                // possibly changes
+    bool &ordering_changed,
     DynamicHeuristic method = ORD_HILBERT_THEN_DEG
 );
 
