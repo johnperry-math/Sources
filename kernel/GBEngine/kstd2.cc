@@ -1341,6 +1341,7 @@ static int bba_count = 0;
 void kDebugPrint(kStrategy strat);
 
 /**
+  UTILITY FOR DYNAMIC ALGORITHM
   Creates a new ring from an old ring, using new_weight to define the ordering.
   This is necessary for the dynamic algorithm
 */
@@ -1382,6 +1383,7 @@ ring new_dynamic_ring_from_old(ring oldR, ray *new_weight)
 }
 
 /**
+  UTILITY FOR DYNAMIC ALGORITHM
   Converts the elements of an ideal from an old ring to a new ring.
   This is necessary for the dynamic algorithm.
 */
@@ -1397,8 +1399,18 @@ void convertIdeal(ideal I, ring oldRing, ring newRing)
     }
 }
 
-void convert_stratS(kStrategy & strat, ring oldR, ring newR)
+/**
+  UTILITY FOR DYNAMIC ALGORITHM
+  Converts oldP=strat->S[i] to the new ring. Since oldP may also be used by
+  strat->T and strat->L, it likewise searches through these lists to check
+  whether they need changing. In the case of strat->T, some polynomials may
+  be missed, so we maintain a list (whichTs) to record which elements of T
+  have been changed here.
+*/
+void convert_stratS(kStrategy & strat, bool * & whichTs, ring oldR, ring newR)
 {
+  if (strat->tl >= 0) whichTs = (bool *)omAlloc(sizeof(bool) * (strat->tl + 1));
+  for (int i = 0; i <= strat->tl; ++i) whichTs[i] = false;
   for (int i = 0; i <= strat->sl; ++i)
   {
     //cout << "poly " << i << ' '; pWrite(strat->S[i]);
@@ -1413,6 +1425,7 @@ void convert_stratS(kStrategy & strat, ring oldR, ring newR)
     for (int j = 0; j <= strat->tl; ++j)
       if (strat->T[j].p == oldP)
       {
+        whichTs[j] = true;
         strat->T[j].p = strat->S[i];
         strat->sevT[i] = pGetShortExpVector(strat->T[i].p);
       }
@@ -1435,6 +1448,10 @@ void convert_stratS(kStrategy & strat, ring oldR, ring newR)
   }
 }
 
+/**
+  UTILITY FOR DYNAMIC ALGORITHM
+  Converts strat->P data to new ring.
+*/
 void convert_stratP(kStrategy &strat, ring oldR, ring newR)
 {
   poly oldP = strat->P.p;
@@ -1448,17 +1465,21 @@ void convert_stratP(kStrategy &strat, ring oldR, ring newR)
   p_Norm(strat->P.p, newR);
 }
 
+/**
+  UTILITY FOR DYNAMIC ALGORITHM
+  Converts strat[i]->L data to new ring. This includes L.p, but not L.p1 or L.p2,
+  as those chang in convert_stratS and convert_stratT.
+  However, we do use the value of L.p1 and L.p2 to determine how to change L.p.
+
+  Also converts L.lcm, L.sev, L.FDeg, and L.tailRing.
+*/
 void convert_stratL(kStrategy &strat, ring oldR, ring newR)
 {
   for (int i = 0; i <= strat->Ll; ++i)
   {
     if ((strat->L)[i].p != NULL)
     {
-      //cout << "changing pair poly " << i << ' '; pWrite((strat->L)[i].p);
-      //cout << "of "; pWrite(strat->L[i].p1);
-      //cout << "and "; pWrite(strat->L[i].p2);
       poly oldP = (strat->L)[i].p;
-      //if ((oldP != NULL) && ((strat->L)[i].p1 != NULL))
       if ((strat->L)[i].p1 != NULL)
       {
         p_LmDelete(&oldP, oldR);
@@ -1471,7 +1492,6 @@ void convert_stratL(kStrategy &strat, ring oldR, ring newR)
         p_ShallowDelete(&oldP, oldR);
         p_Setm((strat->L)[i].p, newR);
       }
-      if (strat->L[i].sev != 0) strat->L[i].sev = p_GetShortExpVector(strat->L[i].p, newR);
       (strat->L)[i].FDeg = (strat->L)[i].pFDeg();
       (strat->L)[i].sev = p_GetShortExpVector((strat->L)[i].p,newR);
       (strat->L)[i].tailRing = newR;
@@ -1490,15 +1510,17 @@ void convert_stratL(kStrategy &strat, ring oldR, ring newR)
   }
 }
 
-void convert_stratT(kStrategy & strat, ring oldR, ring newR)
+/**
+  Converts those elements of strat->T which are listed as false by whichTs.
+  Those listed as true were converted by convert_stratS.
+*/
+void convert_stratT(kStrategy & strat, bool * & whichTs, ring oldR, ring newR)
 {
   for (int i = 0; i <= strat->tl; ++i)
   {
     //cout << "reducer " << i << ' '; pWrite((strat->T)[i].p);
     bool found = false;
-    for (int j = 0; !found && j <= strat->sl; ++j)
-      found = strat->S[j] == strat->T[i].p;
-    if (found)
+    if (whichTs[i])
     { cout << "unchanged\n"; }
     else
     {
@@ -1526,6 +1548,8 @@ void convert_stratT(kStrategy & strat, ring oldR, ring newR)
     (strat->T)[i].FDeg = (strat->T)[i].pFDeg();
     (strat->T)[i].tailRing = newR;
   }
+  if (strat->tl >= 0)
+    omFree(whichTs);
 }
 
 void convert_currentLPPs(vector<poly> & CurrentLPPs, ring oldR, ring newR)
@@ -1781,11 +1805,12 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
           strat->P.tailRing = dynR;
           // convert all the important data
           convert_currentLPPs(CurrentLPPs, oldR, dynR);
-          convert_stratS(strat, oldR, dynR);
+          bool * whichTs = NULL;
+          convert_stratS(strat, whichTs, oldR, dynR);
           convert_stratP(strat, oldR, dynR);
           convertIdeal(F, oldR, dynR);
           convert_stratL(strat, oldR, dynR);
-          convert_stratT(strat, oldR, dynR);
+          convert_stratT(strat, whichTs, oldR, dynR);
           rDelete(oldR);
         } // ordering changed?
         //cout << "done\n";

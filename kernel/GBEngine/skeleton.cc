@@ -495,7 +495,10 @@ bool skeleton::ddm(const constraint &constraint)
   //cout << rays_above.size() << " rays above; " << rays_below.size() << " rays below; " << rays_on.size() << " rays on\n";
   // check for constitency
   if (rays_above.size() == 0)
+  {
     consistent = false;
+    //cout << "inconsistent\n";
+  }
   // proceed only if constraint is consistent, and *not* redundant;
   // redundancy can be checked by making sure
   // that at least one ray is below the constraint
