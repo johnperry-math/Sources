@@ -72,6 +72,7 @@ long sba_interreduction_operations;
  * SBA stuff -- done
 ***********************************************/
 
+#include "../../Singular/ipid.h"
 #include <kernel/GBEngine/kutil.h>
 #include <misc/options.h>
 #include <omalloc/omalloc.h>
@@ -1563,12 +1564,13 @@ void convert_currentLPPs(vector<poly> & CurrentLPPs, ring oldR, ring newR)
   }
 }
 
-ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic_algorithm)
+ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_method)
 {
 #ifdef KDEBUG
   bba_count++;
   int loop_count = 0;
 #endif /* KDEBUG */
+  int num_spols = 0;
   int   red_result = 1;
   int   olddeg,reduc;
   int hilbeledeg=1,hilbcount=0,minimcnt=0;
@@ -1581,7 +1583,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
   vector<poly> CurrentLPPs;
   //vector<poly> CurrentPolys;
   skeleton skel(currRing->N);
-  if (dynamic_algorithm)
+  if (dynamic_method)
   {
     // set up ring
     dynR = new_dynamic_ring_from_old(currRing, NULL);
@@ -1629,7 +1631,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
 #endif /* KDEBUG */
 
 #ifdef HAVE_TAIL_RING
-  if(!idIs0(F) &&(!rField_is_Ring(currRing)) && !dynamic_algorithm)  // create strong gcd poly computes with tailring and S[i] ->to be fixed
+  if(!idIs0(F) &&(!rField_is_Ring(currRing)) && !dynamic_method)  // create strong gcd poly computes with tailring and S[i] ->to be fixed
     kStratInitChangeTailRing(strat);
 #endif
   if (BVERBOSE(23))
@@ -1638,7 +1640,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
     if (test_PosInL!=NULL) strat->posInL=test_PosInL;
     kDebugPrint(strat);
   }
-  if (dynamic_algorithm)
+  if (dynamic_method)
   {
     // doing this earlier could let another function mess it up
     strat->tailRing = dynR;
@@ -1653,6 +1655,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
   {
     //cout << "looping in basis\n";
     //cout << "strat->P.p = "; pWrite(strat->P.p);
+    cout << "strat->Ll (number of critical pairs): " << strat->Ll << endl;
     #ifdef KDEBUG
       loop_count++;
       if (TEST_OPT_DEBUG) messageSets(strat);
@@ -1705,14 +1708,15 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
           break;
         }
       }
-      cout << "building "; pWrite(strat->P.lcm);
+      //cout << "building "; pWrite(strat->P.lcm);
       // create the real one
       ksCreateSpoly(&(strat->P), NULL, strat->use_buckets,
                     strat->tailRing, m1, m2, strat->R);
+      ++num_spols;
     }
     else if (strat->P.p1 == NULL)
     {
-      cout << "building "; pWrite(strat->P.p); pWrite(strat->P.p1); pWrite(strat->P.p2);
+      //cout << "building "; pWrite(strat->P.p); pWrite(strat->P.p1); pWrite(strat->P.p2);
       if (strat->minim > 0)
         strat->P.p2=p_Copy(strat->P.p, currRing, strat->tailRing);
       // for input polys, prepare reduction
@@ -1731,7 +1735,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
 
       /* reduction of the element choosen from L */
       // not sure why strat->P.FDeg changes sometimes between lines below & here
-      if (dynamic_algorithm) strat->P.FDeg = strat->P.pFDeg();
+      if (dynamic_method) strat->P.FDeg = strat->P.pFDeg();
       red_result = strat->red(&strat->P,strat);
       if (errorreported)  break;
     }
@@ -1777,18 +1781,18 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
       else
       {
         strat->P.pNorm();
-        if ((TEST_OPT_REDSB)||(TEST_OPT_REDTAIL)||(dynamic_algorithm))
+        if ((TEST_OPT_REDSB)||(TEST_OPT_REDTAIL)||(dynamic_method))
           strat->P.p = redtailBba(&(strat->P),pos-1,strat, withT);
       }
 
       // refine dynamic ordering
-      if (dynamic_algorithm)
+      if (dynamic_method)
       {
         //cout << "selecting monomial for "; p_Write(strat->P.p, dynR);
         //SelectMonomial(strat->P.p, CurrentLPPs, strat->S, strat->sl, skel, ORD_HILBERT_THEN_LEX);
         bool ordering_changed = false;
         SelectMonomial(strat->P.p, CurrentLPPs, strat->S, strat->sl, skel,
-                       ordering_changed, ORD_HILBERT_THEN_DEG);
+                       ordering_changed, (DynamicHeuristic )dynamic_method);
         if (ordering_changed) // no need to incur this penalty if nothing changed
         {
           //cout << "selected\n";
@@ -1889,13 +1893,14 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
 #endif /* KDEBUG */
     kTest_TS(strat);
   }
-  cout << "completed with basis:\n";
+  /*cout << "completed with basis:\n";
   for (int i=0; i < strat->sl; ++i)
   {
     cout << '\t'; pWrite(strat->S[i]);
   }
   cout << "completed with ring:\n";
-  rWrite(currRing, true); cout << endl;
+  rWrite(currRing, true); cout << endl;*/
+  if (dynamic_method) IDRING(currRingHdl) = currRing;
 #ifdef KDEBUG
 #if MYTEST
   PrintS("bba finish GB: currRing: "); rWrite(currRing);
@@ -1926,11 +1931,11 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
   }
 
   /* complete reduction of the standard basis--------- */
-  if (TEST_OPT_REDSB || dynamic_algorithm)
+  if (TEST_OPT_REDSB || dynamic_method)
   {
     completeReduce(strat);
 #ifdef HAVE_TAIL_RING
-    if (strat->completeReduce_retry && !dynamic_algorithm)
+    if (strat->completeReduce_retry && !dynamic_method)
     {
       // completeReduce needed larger exponents, retry
       // to reduce with S (instead of T)
@@ -1965,10 +1970,11 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic
 #endif /* MYTEST */
 #endif /* KDEBUG */
   idTest(strat->Shdl);
+  cout << num_spols << " s-polynomials computed\n";
 
   return (strat->Shdl);
 }
-ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic_algorithm)
+ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_method)
 {
   // ring order stuff:
   // in sba we have (until now) two possibilities:
@@ -2074,7 +2080,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynami
 #endif /* KDEBUG */
 
 #ifdef HAVE_TAIL_RING
-  if(!idIs0(F) &&(!rField_is_Ring(currRing)) && !dynamic_algorithm)  // create strong gcd poly computes with tailring and S[i] ->to be fixed
+  if(!idIs0(F) &&(!rField_is_Ring(currRing)) && !dynamic_method)  // create strong gcd poly computes with tailring and S[i] ->to be fixed
     kStratInitChangeTailRing(strat);
 #endif
   if (BVERBOSE(23))
@@ -2582,7 +2588,7 @@ ideal sba (ideal F0, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynami
   {
     completeReduce(strat);
 #ifdef HAVE_TAIL_RING
-    if (strat->completeReduce_retry && !dynamic_algorithm)
+    if (strat->completeReduce_retry && !dynamic_method)
     {
       // completeReduce needed larger exponents, retry
       // to reduce with S (instead of T)
@@ -2851,7 +2857,7 @@ ideal kNF2 (ideal F,ideal Q,ideal q,kStrategy strat, int lazyReduce)
 ********************************************************************/
 void f5c (kStrategy strat, int& olddeg, int& minimcnt, int& hilbeledeg,
           int& hilbcount, int& srmax, int& lrmax, int& reduc, ideal Q,
-          intvec *w,intvec *hilb, bool dynamic_algorithm )
+          intvec *w,intvec *hilb, bool dynamic_method )
 {
   int Ll_old, red_result = 1;
   int pos  = 0;
@@ -2902,7 +2908,7 @@ void f5c (kStrategy strat, int& olddeg, int& minimcnt, int& hilbeledeg,
   strat->sl = -1;
 #if 0
 //#ifdef HAVE_TAIL_RING
-  if(!rField_is_Ring() && !dynamic_algorithm)  // create strong gcd poly computes with tailring and S[i] ->to be fixed
+  if(!rField_is_Ring() && !dynamic_method)  // create strong gcd poly computes with tailring and S[i] ->to be fixed
     kStratInitChangeTailRing(strat);
 #endif
   //enterpairs(pOne(),0,0,-1,strat,strat->tl);

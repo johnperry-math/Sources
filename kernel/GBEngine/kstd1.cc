@@ -2110,7 +2110,7 @@ long kHomModDeg(poly p, ring r)
 }
 
 ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
-          int newIdeal, intvec *vw)
+          int newIdeal, intvec *vw, int dynamic_method)
 {
   if(idIs0(F))
     return idInit(1,F->rank);
@@ -2207,7 +2207,7 @@ ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
     if(currRing->OrdSgn == -1)
       r=mora(F,Q,NULL,hilb,strat);
     else
-      r=bba(F,Q,NULL,hilb,strat);
+      r=bba(F,Q,NULL,hilb,strat,dynamic_method);
     }
   else
 #endif
@@ -2222,9 +2222,13 @@ ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
     else
     {
       if (w!=NULL)
-        r=bba(F,Q,*w,hilb,strat);
+        r=bba(F,Q,*w,hilb,strat,dynamic_method);
       else
-        r=bba(F,Q,NULL,hilb,strat);
+      {
+        r=bba(F,Q,NULL,hilb,strat,dynamic_method);
+  /* YO */
+        if (currRing->order[0] != 0) { }
+      }
     }
   }
 #ifdef KDEBUG

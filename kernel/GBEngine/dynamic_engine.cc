@@ -391,9 +391,10 @@ void SelectMonomial(
     DynamicHeuristic method
 )
 {
-  cout << "current ring: "; rWrite(currRing); cout << endl;
-  cout << "entering selmon with "; pWrite(r); cout << endl;
-  cout << "skeleton before: " << currSkel << endl;
+  cout << "entering selmon\n";
+  //cout << "current ring: "; rWrite(currRing); cout << endl;
+  //cout << "new polynomial: "; pWrite(r); cout << endl;
+  //cout << "skeleton before: " << currSkel << endl;
   ring Rx = currRing;
   ray w = ray_sum(currSkel.get_rays());
   vector<unsigned long long> ord;
@@ -415,8 +416,8 @@ void SelectMonomial(
   cout << allPPs.size() << " possible monomials\n";
   compatiblePP(currentLPP, allPPs, currSkel.get_rays(), compatiblePPs, boundaryPPs);
   cout << compatiblePPs.size() << " compatible monomials\n";
-  for (set<poly>::iterator piter = compatiblePPs.begin(); piter != compatiblePPs.end(); ++piter)
-    pWrite(*piter);
+  //for (set<poly>::iterator piter = compatiblePPs.begin(); piter != compatiblePPs.end(); ++piter)
+  //  pWrite(*piter);
   // list possible future ideals, sort by Hilbert Function
   // using a set sorts the ideals automagically by appropriate DynamicHeuristics
   list<PPWithIdeal> possibleIdealsBasic;

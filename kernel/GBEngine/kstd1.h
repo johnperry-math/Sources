@@ -31,7 +31,7 @@ ideal kSba(ideal F,ideal Q, tHomog h, intvec ** mw, int incremental=0, int arri=
           int syzComp=0,int newIdeal=0, intvec *vw=NULL);
 
 ideal kStd(ideal F, ideal Q, tHomog h, intvec ** mw,intvec *hilb=NULL,
-          int syzComp=0,int newIdeal=0, intvec *vw=NULL);
+          int syzComp=0,int newIdeal=0, intvec *vw=NULL, int dynamic_method=0);
 
 ideal kStdShift(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
 		int newIdeal, intvec *vw, int uptodeg, int lVblock);

@@ -667,6 +667,7 @@ struct sValCmd2 dArith2[]=
 ,{D(jjSTD_1),     STD_CMD,        MODUL_CMD,      MODUL_CMD,  MODUL_CMD, ALLOW_PLURAL |ALLOW_RING}
 ,{D(jjSTD_HILB),  STD_CMD,        IDEAL_CMD,      IDEAL_CMD,  INTVEC_CMD, NO_PLURAL |NO_RING}
 ,{D(jjSTD_HILB),  STD_CMD,        MODUL_CMD,      MODUL_CMD,  INTVEC_CMD, NO_PLURAL |NO_RING}
+,{D(jjDSTD),      DSTD_CMD,       IDEAL_CMD,      IDEAL_CMD,  INT_CMD, NO_PLURAL | NO_RING}
 ,{D(jjVARSTR2),   VARSTR_CMD,     STRING_CMD,     RING_CMD,   INT_CMD, ALLOW_PLURAL |ALLOW_RING}
 ,{D(jjVARSTR2),   VARSTR_CMD,     STRING_CMD,     QRING_CMD,  INT_CMD, ALLOW_PLURAL |ALLOW_RING}
 ,{D(jjWAIT1ST2),  WAIT1ST_CMD,    INT_CMD,        LIST_CMD,   INT_CMD, ALLOW_PLURAL |ALLOW_RING}
@@ -896,6 +897,7 @@ cmdnames cmds[] =
   { "dim",         0, DIM_CMD ,           CMD_12},
   { "div",         0, INTDIV_CMD ,        MULDIV_OP},
   { "division",    0, DIVISION_CMD ,      CMD_M},
+  { "dstd",        0, DSTD_CMD ,          CMD_2},
   { "dump",        0, DUMP_CMD,           CMD_1},
   { "extgcd",      0, EXTGCD_CMD ,        CMD_2},
   { "ERROR",       0, ERROR_CMD ,         CMD_1},
@@ -927,7 +929,6 @@ cmdnames cmds[] =
   { "GCD",         2, GCD_CMD ,           CMD_2},
   { "hilb",        0, HILBERT_CMD ,       CMD_123},
   { "hpoly",       0, HPOLY_CMD ,         CMD_2},
-  { "selmon",      0, SELMON_CMD ,        CMD_1},
   { "highcorner",  0, HIGHCORNER_CMD,     CMD_1},
   { "homog",       0, HOMOG_CMD ,         CMD_123},
   { "hres",        0, HRES_CMD ,          CMD_2},

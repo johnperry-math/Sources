@@ -626,8 +626,8 @@ BOOLEAN kTest_S(kStrategy strat);
  *
  ***************************************************************/
 poly kFindZeroPoly(poly input_p, ring leadRing, ring tailRing);
-ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic_algorithm = true);
-ideal sba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, bool dynamic_algorithm = false);
+ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_method = 0);
+ideal sba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_method = 0);
 poly kNF2 (ideal F, ideal Q, poly q, kStrategy strat, int lazyReduce);
 ideal kNF2 (ideal F,ideal Q,ideal q, kStrategy strat, int lazyReduce);
 void initBba(ideal F,kStrategy strat);

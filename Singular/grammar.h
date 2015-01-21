@@ -169,7 +169,7 @@
      SYSVAR = 386,
      UMINUS = 387,
      HPOLY_CMD = 388,
-     SELMON_CMD = 389
+     DSTD_CMD = 389
    };
 #endif
 
