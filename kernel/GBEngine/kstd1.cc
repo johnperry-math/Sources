@@ -2226,8 +2226,6 @@ ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
       else
       {
         r=bba(F,Q,NULL,hilb,strat,dynamic_method);
-  /* YO */
-        if (currRing->order[0] != 0) { }
       }
     }
   }

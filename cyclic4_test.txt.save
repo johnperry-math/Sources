@@ -1,14 +1,14 @@
 ring r=43,(w,x,y,z),dp; ideal i=w+x+y+z,wx+xy+yz+wz,wxy+xyz+yzw+zwx,wxyz-1;
-ideal j=dstd(i);
+ideal j=dstd(i,0);
 basering;
 ring r=43,(v,w,x,y,z),dp;
 ideal i=v+w+x+y+z,vw+wx+xy+yz+zv,vwx+wxy+xyz+yzv+zvw,vwxy+wxyz+xyzv+yzvw+zvwx,
 vwxyz-1;
-ideal j=dstd(i);
+ideal j=dstd(i,0);
 ring r=43,(v,w,x,y,z,h),dp;
 ideal i=v+w+x+y+z,vw+wx+xy+yz+zv,vwx+wxy+xyz+yzv+zvw,vwxy+wxyz+xyzv+yzvw+zvwx,
 vwxyz-h5;
-ideal j=dstd(i);
+ideal j=dstd(i,0);
 ring r=43,(u,v,w,x,y,z,h),dp;
 ideal i=u+v+w+x+y+z,
         uv+vw+wx+xy+yz+zu,
@@ -16,7 +16,7 @@ ideal i=u+v+w+x+y+z,
         uvwx+vwxy+wxyz+xyzu+yzuv+zuvw,
         uvwxy+vwxyz+wxyzu+xyzuv+yzuvw+zuvwx,
         uvwxyz-h6;
-ideal j=dstd(i);
+ideal j=dstd(i,0);
 ring r=43,(t,u,v,w,x,y,z,h),dp;
 ideal i=t+u+v+w+x+y+z,
         tu+uv+vw+wx+xy+yz+zt,
@@ -25,7 +25,7 @@ ideal i=t+u+v+w+x+y+z,
         tuvwx+uvwxy+vwxyz+wxyzt+xyztu+yztuv+ztuvw,
         tuvwxy+uvwxyz+vwxyzt+wxyztu+xyztuv+yztuvw+ztuvwx,
         tuvwxyz-h7;
-ideal j=dstd(i);
+ideal j=dstd(i,0);
 ring r=43,(s,t,u,v,w,x,y,z,h),dp;
 ideal i=s+t+u+v+w+x+y+z,
         st+tu+uv+vw+wx+xy+yz+zs,
@@ -35,4 +35,4 @@ ideal i=s+t+u+v+w+x+y+z,
         stuvwx+tuvwxy+uvwxyz+vwxyzs+wxyzst+xyzstu+yzstuv+zstuvw,
         stuvwxy+tuvwxyz+uvwxyzs+vwxyzst+wxyzstu+xyzstuv+yzstuvw+zstuvwx,
         stuvwxyz-h8;
-ideal j=dstd(i);
+ideal j=dstd(i,0);

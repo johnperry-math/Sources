@@ -1,0 +1,11 @@
+ring r=43,(s,t,u,v,w,x,y,z,h),dp;
+ideal i=s+t+u+v+w+x+y+z,
+        st+tu+uv+vw+wx+xy+yz+zs,
+        stu+tuv+uvw+vwx+wxy+xyz+yzs+zst,
+        stuv+tuvw+uvwx+vwxy+wxyz+xyzs+yzst+zstu,
+        stuvw+tuvwx+uvwxy+vwxyz+wxyzs+xyzst+yzstu+zstuv,
+        stuvwx+tuvwxy+uvwxyz+vwxyzs+wxyzst+xyzstu+yzstuv+zstuvw,
+        stuvwxy+tuvwxyz+uvwxyzs+vwxyzst+wxyzstu+xyzstuv+yzstuvw+zstuvwx,
+        stuvwxyz-h8;
+ideal j=dstd(i,2);
+basering;

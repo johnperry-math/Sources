@@ -1,0 +1,9 @@
+ring R=32003,(t,x,y,z,a,b,c,d,e),dp;
+ideal i=x32z23-y82a,
+        x45-y13z21b,
+        x41c-y33z12,
+        x22-y33z12d,
+        x5y17z22e-1,
+        xyzt-1;
+ideal j=dstd(i,2);
+basering;

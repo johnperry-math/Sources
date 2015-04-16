@@ -1360,7 +1360,7 @@ ring new_dynamic_ring_from_old(ring oldR, ray *new_weight)
   // fill out ordering
   for (int i = 1; i < n; ++i)
     for (int j = 0; j < n; ++j)
-      wvhdl[0][i*n+j] = (i - 1 == j) ? 1 : 0;
+      wvhdl[0][i*n+j] = (i < n - j) ? 1 : 0;
   int * order = (int *)omAlloc(3*sizeof(int *));
   int * block0 = (int *)omAlloc0(3*sizeof(int *));
   int * block1 = (int *)omAlloc0(3*sizeof(int *));
@@ -1496,17 +1496,19 @@ void convert_stratL(kStrategy &strat, ring oldR, ring newR)
       (strat->L)[i].FDeg = (strat->L)[i].pFDeg();
       (strat->L)[i].sev = p_GetShortExpVector((strat->L)[i].p,newR);
       (strat->L)[i].tailRing = newR;
-      //cout << "to "; pWrite((strat->L)[i].p);
     }
     if ((strat->L)[i].lcm != NULL)
     {
-      //cout << "changing pair lcm " << i << ' '; pWrite((strat->L)[i].lcm);
       poly oldP = (strat->L)[i].lcm;
       if (!p_GetCoeff(oldP, oldR)) { p_SetCoeff(oldP, n_Init(1,newR), newR); }
       (strat->L)[i].lcm = prShallowCopyR(oldP, oldR, newR);
       p_ShallowDelete(&oldP, oldR);
       p_Setm((strat->L)[i].lcm, newR);
-      //cout << "to "; pWrite((strat->L)[i].lcm);
+      /*(strat->L)[i].weighted_sugar = p_WDegree((strat->L)[i].lcm,newR);*/
+    }
+    else
+    {
+      //(strat->L)[i].weighted_sugar = p_WDegree((strat->L)[i].p,newR);
     }
   }
 }
@@ -1522,7 +1524,7 @@ void convert_stratT(kStrategy & strat, bool * & whichTs, ring oldR, ring newR)
     //cout << "reducer " << i << ' '; pWrite((strat->T)[i].p);
     bool found = false;
     if (whichTs[i])
-    { cout << "unchanged\n"; }
+    { /* cout << "unchanged\n"; */ }
     else
     {
       poly oldP = (strat->T)[i].p;
@@ -1585,6 +1587,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
   skeleton skel(currRing->N);
   if (dynamic_method)
   {
+    strat->isDynamic = true;
     // set up ring
     dynR = new_dynamic_ring_from_old(currRing, NULL);
     strat->tailRing = dynR;
@@ -1599,13 +1602,27 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
   }
 
   initBuchMoraCrit(strat); /*set Gebauer, honey, sugarCrit*/
-  initBuchMoraPos(strat);
+  if (dynamic_method) { strat->posInL = dynamicPositionInL; strat->posInT = dynamicPositionInT; }
+  else initBuchMoraPos(strat);
   initHilbCrit(F,Q,&hilb,strat);
   initBba(F,strat);
   /*set enterS, spSpolyShort, reduce, red, initEcart, initEcartPair*/
   /*Shdl=*/initBuchMora(F, Q,strat);
   if (strat->minim>0) strat->M=idInit(IDELEMS(F),F->rank);
   reduc = olddeg = 0;
+  // add weighted degree to generators
+  if (dynamic_method)
+  {
+    strat->red = redHoney;
+    for (int i = 0; i <= strat->Ll; ++i)
+    {
+      strat->L[i].weighted_sugar = 0;
+      for (int j = 0; j < currRing->N; ++j)
+        strat->L[i].weighted_sugar += p_GetExp(strat->L[i].p, j, currRing);
+      cout << "weighted sugar is " << strat->L[i].weighted_sugar << " for ";
+      pWrite(strat->L[i].p);
+    }
+  }
 
 #ifndef NO_BUCKETS
   if (!TEST_OPT_NOT_BUCKETS)
@@ -1654,8 +1671,9 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
   while (strat->Ll >= 0)
   {
     //cout << "looping in basis\n";
-    //cout << "strat->P.p = "; pWrite(strat->P.p);
     cout << "strat->Ll (number of critical pairs): " << strat->Ll << endl;
+    for (int pairi = 0; pairi <= strat->Ll; pairi++) pWrite((strat->L[pairi].lcm == NULL) ? strat->L[pairi].p : strat->L[pairi].lcm);
+    //cout << "current skeleton\n" << skel << endl;
     #ifdef KDEBUG
       loop_count++;
       if (TEST_OPT_DEBUG) messageSets(strat);
@@ -1681,6 +1699,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
     }
     /* picks the last element from the lazyset L */
     strat->P = strat->L[strat->Ll];
+    cout << "picked element with sugar " << strat->P.weighted_sugar << endl;;
     strat->Ll--;
 
     if (pNext(strat->P.p) == strat->tail)
@@ -1708,7 +1727,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
           break;
         }
       }
-      //cout << "building "; pWrite(strat->P.lcm);
+      cout << "building "; pWrite(pHead(strat->P.p1)); pWrite(pHead(strat->P.p2)); pWrite(strat->P.lcm);
       // create the real one
       ksCreateSpoly(&(strat->P), NULL, strat->use_buckets,
                     strat->tailRing, m1, m2, strat->R);
@@ -1716,7 +1735,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
     }
     else if (strat->P.p1 == NULL)
     {
-      //cout << "building "; pWrite(strat->P.p); pWrite(strat->P.p1); pWrite(strat->P.p2);
+      cout << "building "; pWrite(strat->P.p); pWrite(strat->P.p1); pWrite(strat->P.p2);
       if (strat->minim > 0)
         strat->P.p2=p_Copy(strat->P.p, currRing, strat->tailRing);
       // for input polys, prepare reduction
@@ -1971,6 +1990,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
 #endif /* KDEBUG */
   idTest(strat->Shdl);
   cout << num_spols << " s-polynomials computed\n";
+  cout << IDELEMS(strat->Shdl) << " polynomials in basis\n";
 
   return (strat->Shdl);
 }

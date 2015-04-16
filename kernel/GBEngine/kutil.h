@@ -79,6 +79,7 @@ public:
     length,     // as of pLDeg
     pLength,    // either == 0, or == pLength(p)
     i_r;        // index of TObject in R set, or -1 if not in T
+  long weighted_sugar;
   BOOLEAN is_normalized; // true, if pNorm was called on p, false otherwise
   // used in incremental sba() with F5C:
   // we know some of the redundant elements in
@@ -368,7 +369,7 @@ public:
   BOOLEAN z2homog; // Z_2 - homogeneous input allows product criterion in commutative and SCA cases!
 #endif
   BOOLEAN kHEdgeFound;
-  BOOLEAN honey,sugarCrit;
+  BOOLEAN honey,sugarCrit, isDynamic;
   BOOLEAN Gebauer,noTailReduction;
   BOOLEAN fromT;
   BOOLEAN noetherSet;
@@ -443,6 +444,8 @@ int posInT_pLength(const TSet set,const int length,LObject &p);
 
 
 void reorderS (int* suc,kStrategy strat);
+int dynamicPositionInL(const LSet, const int, LObject *, const kStrategy);
+int dynamicPositionInT(const TSet, const int, LObject &);
 int posInLF5C (const LSet set, const int length,
                LObject* L,const kStrategy strat);
 int posInLSig (const LSet set, const int length,

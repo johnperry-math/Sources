@@ -576,7 +576,7 @@ bool skeleton::ddm(const vector<constraint> &new_constraints)
 {
   // innocent until proven guilty
   bool consistent = true;
-  cout << "adding " << new_constraints.size() << "constraints\n";
+  //cout << "adding " << new_constraints.size() << "constraints\n";
   // process each constraint sequentially
   for (
         vector<const constraint>::iterator nciter = new_constraints.begin();
@@ -586,6 +586,7 @@ bool skeleton::ddm(const vector<constraint> &new_constraints)
   {
     //cout << "adding constraint " << *nciter << endl;
     consistent = ddm(*nciter);
+    //cout << "\tconsistent? " << consistent << endl;
   }
   return consistent;
 }
@@ -724,11 +725,11 @@ ostream & operator << (ostream & ostr, const skeleton &skel)
       )
     ostr << '\t' << *citer << endl;
   // rays
-  ostr << "has rays" << endl;
+  ostr << "has " << skel.rays.size() << " rays" << endl;
   for (set<ray>::iterator riter=skel.rays.begin(); riter != skel.rays.end(); ++riter)
     ostr << '\t' << *riter << endl;
   //edges
-  ostr << "connected in edges" << endl;
+  ostr << "connected in " << skel.edges.size() << " edges" << endl;
   for (set<edge>::iterator eiter=skel.edges.begin(); eiter != skel.edges.end(); ++eiter)
     ostr << '\t' << *eiter << endl;
   // footer

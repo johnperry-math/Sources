@@ -21,6 +21,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <iostream>
+using std::cout; using std::endl;
 
 #ifdef KDEBUG
 #undef KDEBUG
@@ -1728,6 +1730,26 @@ void enterOnePairNormal (int i,poly p,int ecart, int isFromQ,kStrategy strat, in
     /*- the pair (S[i],p) enters B -*/
     Lp.p1 = strat->S[i];
     Lp.p2 = p;
+    /* dynamic: compute weighted sugar */
+    if (currRing->wvhdl != NULL)
+    {
+      long d1=0, d2=0;
+      // first get sugar of multiples
+      for (int i = 0; i < currRing->N; ++i)
+      {
+        /*d1 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p1,i, currRing))*p_Weight(i, currRing);
+        d2 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p2,i, currRing))*p_Weight(i, currRing);*/
+        d1 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p1,i, currRing));
+        d2 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p2,i, currRing));
+      }
+      // now determine sugar of spoly
+      /*long duf1 = d1 + p_WDegree(Lp.p1, currRing);
+      long duf2 = d2 + p_WDegree(Lp.p2, currRing);*/ 
+      long duf1 = d1 + strat->R[strat->S_2_R[i]]->weighted_sugar;
+      long duf2 = d2 + strat->L[strat->Ll + 1].weighted_sugar;
+      Lp.weighted_sugar = (duf1 > duf2) ? duf1 : duf2;
+    }
+    /* end dynamic */
 
     if (
         (!rIsPluralRing(currRing))
@@ -1760,6 +1782,176 @@ void enterOnePairNormal (int i,poly p,int ecart, int isFromQ,kStrategy strat, in
     enterL(&strat->B,&strat->Bl,&strat->Bmax,Lp,l);
   }
 }
+
+int dynamicPositionInT(const TSet set, const int length, LObject &Lp)
+{
+  if (length < 0) return 0;
+
+  if (set[0].weighted_sugar > Lp.weighted_sugar)
+    return 0;
+
+  int i;
+  int an = 0;
+  int en = length;
+  cout << "sorting key " << Lp.weighted_sugar << ' '; pWrite(Lp.p);
+  loop
+  {
+    if (an >= en-1)
+    {
+      cout << "comparing with:\n\t"; pWrite(set[an].p); cout << '\t'; pWrite(set[en].p);
+      if (set[an].weighted_sugar != set[en].weighted_sugar)
+      {
+        if (set[an].weighted_sugar < Lp.weighted_sugar) return an;
+        if (set[an].weighted_sugar > Lp.weighted_sugar)
+        {
+          if (set[en].weighted_sugar > Lp.weighted_sugar) return en+1;
+          if (set[en].weighted_sugar < Lp.weighted_sugar) return en;
+          // we now know set[en].weighted_sugar == Lp.weighted_sugar so compare HT
+          if (p_LmCmp(set[en].p,Lp.p,currRing) < 0) return en;
+          // lcm of Lp.weighted_sugar is smaller
+          return en+1;
+        }
+        // only remaining possibility: same sugar
+        if (p_LmCmp(set[an].p,Lp.p,currRing) < 0) return an;
+        // lcm of Lp.weighted_sugar is smaller
+        return an+1;
+      }
+      else // weighted sugar on ends is equal
+      {
+        if (set[an].weighted_sugar < Lp.weighted_sugar) return an;
+        if (set[an].weighted_sugar > Lp.weighted_sugar) return en + 1;
+        // weighted sugar of Lp is equal, too; compare HTs
+        if (p_LmCmp(set[an].p,Lp.p,currRing) <= 0)
+          return an;
+        // at this point, set[an] has larger HT; so, compare with en
+        if (p_LmCmp(set[en].p,Lp.p,currRing) <= 0)
+          return en;
+        // at this point, set[en] has larger HT; so, prefer to do Lp first
+        return en+1;
+      }
+    }
+    i=(an+en) / 2;
+    // prefer smaller sugar
+    if (set[i].weighted_sugar > Lp.weighted_sugar) an=i;  // discard larger sugars
+    else if (set[i].weighted_sugar < Lp.weighted_sugar) en=i; // discard smaller sugars
+    // prefer smaller HT
+    else if (p_LmCmp(set[i].p,Lp.p,currRing)==1) an = i; // discard larger HTs
+    else en = i; // discard smaller HTs (Lp.p too large)
+  }
+}
+
+// compares a pair according to dynamic algorithm criteria
+int cmpDynPair(LObject &a, LObject &b)
+{
+  if (a.weighted_sugar > b.weighted_sugar) return 1;
+  if (a.weighted_sugar < b.weighted_sugar) return -1;
+  if (a.lcm != NULL) // a is a new pair
+  {
+    if (b.lcm != NULL) return p_LmCmp(a.lcm, b.lcm, currRing);
+    else return 1; // this shouldn't happen in practice
+  }
+  else // a is a generator
+  {
+    if (b.lcm != NULL) return -1; // consider generators smaller
+    // both are generators; compare leading terms
+    cout << "comparing\n\t"; pWrite(a.p); cout << '\t'; pWrite(b.p); cout << p_LmCmp(a.p,b.p,currRing) << endl;
+    return p_LmCmp(a.p, b.p, currRing);
+  }
+}
+
+// adapted from posInL0
+int dynamicPositionInL(const LSet set, const int length, LObject *Lp, kStrategy strat)
+{
+  if (length < 0) return 0;
+
+  if (set[length].weighted_sugar > Lp->weighted_sugar)
+    return length+1;
+
+  int i;
+  int an = 0;
+  int en = length;
+  cout << "sorting key " << Lp->weighted_sugar << ' '; pWrite((Lp->lcm == NULL) ? Lp->p : Lp->lcm);
+  loop
+  {
+    if (an >= en-1)
+    {
+      cout << "last pair: " << an << ',' << en << endl; 
+      if (cmpDynPair(set[en], *Lp) > 0) return en + 1; // Lp smaller than set[en]
+      if (cmpDynPair(set[an], *Lp) <= 0) return an; // Lp larger than or equal to set[an]
+      return en; // Lp larger than set[en], smaller than set[an]
+    }
+    i=(an+en) / 2;
+    // prefer smaller sugar
+    if (set[i].weighted_sugar > Lp->weighted_sugar) an=i;  // discard larger sugars
+    else if (set[i].weighted_sugar < Lp->weighted_sugar) en=i; // discard smaller sugars
+    else if (set[i].lcm==NULL && Lp->lcm != NULL) en = i;  // prefer generator to new
+    else if (set[i].lcm != NULL && Lp->lcm == NULL) an = i; // should not occur
+    else if (set[i].lcm == NULL && Lp->lcm == NULL)
+    {
+      if (p_LmCmp(set[i].p, Lp->p, currRing)) an = i;
+      else en = i;
+    }
+    // prefer smaller lcm
+    else if (p_LmCmp(set[i].lcm,Lp->lcm,currRing)==1) an = i; // discard larger lcms
+    else en = i; // discard smaller lcms (Lp->lcm too large)
+  }
+}
+
+/*int dynamicPosition(const LSet set, const int length, LObject *Lp, kStrategy strat)
+{
+  if (length < 0) return 0;
+
+  if (set[length].weighted_sugar > Lp->weighted_sugar)
+    return length+1;
+
+  int i;
+  int an = 0;
+  int en = length;
+  int Lp_ws = Lp->weighted_sugar;
+  int Lp_wd = p_WDegree(Lp->lcm, currRing);
+  cout << "sorting key for "; pWrite(Lp->lcm);
+  cout << "\t" << Lp_ws << "\t" << Lp_wd << '\n';
+  loop
+  {
+    //cout << "\tan" << an << "\ten" << en << '\n';
+    if (an >= en-1)
+    {
+      if (set[an].weighted_sugar == set[en].weighted_sugar)
+      {
+        int an_deg = (set[an].lcm == NULL) ? p_WDegree(set[an].p, currRing) : p_WDegree(set[an].lcm, currRing);
+        int en_deg = (set[en].lcm == NULL) ? p_WDegree(set[en].p, currRing) : p_WDegree(set[en].lcm, currRing);
+        if (an_deg <= Lp_wd) return an;
+        else if (en_deg <= Lp_wd) return en;
+        else return en+1;
+      }
+      else
+      {
+        int j = (set[an].weighted_sugar > Lp_ws) ? en : an;
+        if (set[j].weighted_sugar > Lp_ws) return j+1;
+        else return j;
+      }
+    }
+    i=(an+en) / 2;
+    if (set[i].weighted_sugar == Lp_ws)
+    {
+      if (set[i].lcm != NULL)
+      {
+        if (p_WDegree(set[i].lcm, currRing) > Lp_wd) an=i;
+        else en=i;
+      }
+      else
+      {
+        if (p_WDegree(set[i].p, currRing) > Lp_wd) an=i;
+        else en=i;
+      }
+    }
+    else
+    {
+      if (set[i].weighted_sugar > Lp_ws) an=i;
+      else en=i;
+    }
+  }
+} */
 
 /*2
 * put the pair (s[i],p)  into the set B, ecart=ecart(p)
@@ -2042,6 +2234,7 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
 */
 void enterOnePairSpecial (int i,poly p,int ecart,kStrategy strat, int atR = -1)
 {
+  cout << "enter pair specially\n";
   //PrintS("try ");wrp(strat->S[i]);PrintS(" and ");wrp(p);PrintLn();
   if(pHasNotCF(p,strat->S[i]))
   {
@@ -9131,6 +9324,7 @@ void initBuchMoraShift (ideal F,ideal Q,kStrategy strat)
 */
 void enterOnePairManyShifts (int i, poly p, int ecart, int isFromQ, kStrategy strat, int /*atR*/, int uptodeg, int lV)
 {
+  cout << "enter pair many shiftsly\n";
   /* p comes from strat->P.p, that is LObject with LM in currRing and Tail in tailRing */
 
   assume(p_LmCheckIsFromRing(p,currRing));

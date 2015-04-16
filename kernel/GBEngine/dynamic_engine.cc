@@ -36,14 +36,14 @@ bool LessByHilbert (const PPWithIdeal &a, const PPWithIdeal &b)
     if (i >= h1->length())
     {
       if (i >= h2->length())
-      {
+      { // the numerators are equal; break tie via lex
         int i = 1;
         while (i <= n && p_GetExp(a.getPP(),i,Rx) == p_GetExp(b.getPP(),i,Rx))
           ++i;
         if (i == n)
           result = false;
         else
-          result = p_GetExp(a.getPP(), i, Rx) < p_GetExp(b.getPP(), i, Rx);
+          result = p_GetExp(a.getPP(), i, Rx) > p_GetExp(b.getPP(), i, Rx);
       }
       else
         result = true;
@@ -56,6 +56,7 @@ bool LessByHilbert (const PPWithIdeal &a, const PPWithIdeal &b)
         result = (*h1)[i] < (*h2)[i];
     }
   }
+  //cout << "\tfirst less than second? " << result << endl;
   return result;
 };
 
@@ -208,6 +209,7 @@ void compatiblePP(
   set<poly> initial_candidates;
   initial_candidates.insert(currentLPP);
   // compare other monomials with LPP
+  //cout << "initial test of monomials\n";
   for (
         set<poly>::iterator b_ptr = allPPs.begin();
         b_ptr != allPPs.end();
@@ -216,6 +218,7 @@ void compatiblePP(
   {
     // take the dot product of each monomial's exponents with pp,
     // add the ones that pass muster to initial_candidates
+    //cout << '\t'; p_Write(*b_ptr, Rx);
     p_GetExpV(*b_ptr, b, Rx);
     for (unsigned long i = 1; i <= n; ++i) { along[i-1] = b[i]; }
     ray bray(n, along);
@@ -227,6 +230,7 @@ void compatiblePP(
         )
     {
       // check b against a with all rays
+      //cout << "checking " << bray << " against " << aray << " via " << *w_ptr << ": " << (*w_ptr) * bray << ' ' << (*w_ptr) * aray << endl;
       if ((*w_ptr) * bray > (*w_ptr) * aray)
       {
         // only need one success
@@ -239,6 +243,7 @@ void compatiblePP(
   // second refinement: compare remaining monomials with each other
   for (set<poly>::iterator p_ptr = initial_candidates.begin(); p_ptr != initial_candidates.end(); ++p_ptr)
   {
+    //cout << "testing initial candidate "; p_Write(*p_ptr, Rx);
     p_GetExpV(*p_ptr, a, Rx);
     for (unsigned long i = 1; i <= n; ++i) { along[i-1] = a[i]; }
     ray pray(n, along);
@@ -257,7 +262,7 @@ void compatiblePP(
           ray qray(n, along);
           // guard against invalid exclusions
           unsigned long long wt = (*w_ptr) * qray;
-          if ((((*w_ptr) * pray) <= wt) && wt != 0) maybe_this_vector = false;
+          if ((((*w_ptr) * pray) <= wt) && wt != 0) { maybe_this_vector = false; /*cout << "\tfailed by "; p_Write(*q_ptr, Rx); */ }
         }
       cleared_the_hurdle = maybe_this_vector;
       if (!cleared_the_hurdle) boundary_mons.insert(*p_ptr);
@@ -400,6 +405,7 @@ void SelectMonomial(
   vector<unsigned long long> ord;
   for (unsigned long i = 0; i < w.get_dimension(); ++i) { ord.push_back(w[i]); }
   poly currentLPP = p_Head(r, Rx);
+  //cout << "comparing against: "; p_Write(currentLPP, Rx);
   set<poly> allPPs, boundaryPPs, compatiblePPs;
   // transform monomials into exponent vectors
   for (
@@ -416,8 +422,8 @@ void SelectMonomial(
   cout << allPPs.size() << " possible monomials\n";
   compatiblePP(currentLPP, allPPs, currSkel.get_rays(), compatiblePPs, boundaryPPs);
   cout << compatiblePPs.size() << " compatible monomials\n";
-  //for (set<poly>::iterator piter = compatiblePPs.begin(); piter != compatiblePPs.end(); ++piter)
-  //  pWrite(*piter);
+  for (set<poly>::iterator piter = compatiblePPs.begin(); piter != compatiblePPs.end(); ++piter)
+    pWrite(*piter);
   // list possible future ideals, sort by Hilbert Function
   // using a set sorts the ideals automagically by appropriate DynamicHeuristics
   list<PPWithIdeal> possibleIdealsBasic;
@@ -436,6 +442,9 @@ void SelectMonomial(
     case ORD_HILBERT_THEN_DEG: possibleIdealsBasic.sort(LessByHilbertThenDegree); break;
     default: possibleIdealsBasic.sort(LessByHilbert);
   }
+  /*cout << "sorted list\n";
+  for (list<PPWithIdeal>::iterator winner = possibleIdealsBasic.begin(); winner != possibleIdealsBasic.end(); ++winner)
+  { cout << '\t'; p_Write(winner->getPP(), Rx); }*/
   list<PPWithIdeal>::iterator winner = possibleIdealsBasic.begin();
   bool searching = true;
   if (possibleIdealsBasic.size() != 1)
@@ -455,6 +464,7 @@ void SelectMonomial(
     {
       skeleton newSkeleton(currSkel);
       vector<constraint> newvecs;
+      cout << "testing "; p_Write((*siter).getPP(),Rx);
       //ConstraintsForNewPP(*siter, compatiblePPs, newvecs);
       ConstraintsForNewPP(*siter, PPunion, newvecs);
       if (newSkeleton.ddm(newvecs))
@@ -470,6 +480,7 @@ void SelectMonomial(
       else
         // this monomial is not, in fact, compatible
         compatiblePPs.erase(siter->getPP());
+      cout << "works? " << !searching << endl;
     }
   }
   else if (possibleIdealsBasic.size() == 1 && compatiblePPs.size() != 1)
