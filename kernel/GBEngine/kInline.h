@@ -182,7 +182,7 @@ KINLINE void sTObject::Delete()
   }
   else
   {
-    p_Delete(&p, currRing, tailRing);
+    if (p != NULL) p_Delete(&p, currRing, tailRing);
   }
 }
 

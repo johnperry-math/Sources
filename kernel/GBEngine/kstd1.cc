@@ -2237,7 +2237,7 @@ ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
     kModW = NULL;
     pRestoreDegProcs(currRing,strat->pOrigFDeg, strat->pOrigLDeg);
   }
-  currRing->pLexOrder = b;
+  if (!dynamic_method) currRing->pLexOrder = b;
 //Print("%d reductions canceled \n",strat->cel);
   HCord=strat->HCord;
   delete(strat);

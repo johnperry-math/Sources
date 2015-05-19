@@ -1735,7 +1735,7 @@ void enterOnePairNormal (int i,poly p,int ecart, int isFromQ,kStrategy strat, in
     {
       long d1=0, d2=0;
       // first get sugar of multiples
-      for (int i = 0; i < currRing->N; ++i)
+      for (int i = 1; i <= currRing->N; ++i)
       {
         /*d1 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p1,i, currRing))*p_Weight(i, currRing);
         d2 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p2,i, currRing))*p_Weight(i, currRing);*/
@@ -1845,6 +1845,9 @@ int cmpDynPair(LObject &a, LObject &b)
 {
   if (a.weighted_sugar > b.weighted_sugar) return 1;
   if (a.weighted_sugar < b.weighted_sugar) return -1;
+  poly at = (a.lcm == NULL) ? a.p : a.lcm;
+  poly bt = (b.lcm == NULL) ? b.p : b.lcm;
+  return (p_LmCmp(at, bt, currRing));
   if (a.lcm != NULL) // a is a new pair
   {
     if (b.lcm != NULL) return p_LmCmp(a.lcm, b.lcm, currRing);
@@ -1882,6 +1885,9 @@ int dynamicPositionInL(const LSet set, const int length, LObject *Lp, kStrategy 
     }
     i=(an+en) / 2;
     // prefer smaller sugar
+    if (cmpDynPair(set[i], *Lp) > 0) an = i;
+    else en = i;
+    /*
     if (set[i].weighted_sugar > Lp->weighted_sugar) an=i;  // discard larger sugars
     else if (set[i].weighted_sugar < Lp->weighted_sugar) en=i; // discard smaller sugars
     else if (set[i].lcm==NULL && Lp->lcm != NULL) en = i;  // prefer generator to new
@@ -1894,6 +1900,7 @@ int dynamicPositionInL(const LSet set, const int length, LObject *Lp, kStrategy 
     // prefer smaller lcm
     else if (p_LmCmp(set[i].lcm,Lp->lcm,currRing)==1) an = i; // discard larger lcms
     else en = i; // discard smaller lcms (Lp->lcm too large)
+    */
   }
 }
 
@@ -2992,6 +2999,108 @@ void initenterpairs (poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR
       strat->chainCrit(h,ecart,strat);
     }
   }
+}
+
+// utility for initenterpairsDynamic()
+inline bool lcmEqualsLcm(poly p, poly q, poly lcm)
+{
+  long n = currRing->N;
+  bool result = true;
+  for (long i = 1; result && i <= n; ++i)
+    result = ((pGetExp(p,i) >= pGetExp(q,i) ? pGetExp(p,i) : pGetExp(q,i)) == pGetExp(lcm,i));
+  return result;
+}
+
+/*
+  Singular's approach to Gebauer-Moeller
+  appears to introduce bad side-effects for the dynamic approach,
+  so we take a different approach in this case.
+*/
+void initenterpairsDynamic(poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR)
+{
+  if (h == NULL) return;
+  // step 1: remove old pairs by Buchberger's lcm criterion
+  for (int i = strat->Ll; i >= 0; --i)
+    if (strat->L[i].lcm != NULL && pLmDivisibleBy(h, strat->L[i].lcm))
+      // avoid deleting Buchberger triples
+      if (!lcmEqualsLcm(h, strat->L[i].p1, strat->L[i].lcm) && !lcmEqualsLcm(h, strat->L[i].p2, strat->L[i].lcm))
+        deleteInL(strat->L, &strat->Ll, i, strat);
+  // step 2: create new pairs, INCLUDING relatively prime pairs (contra usual Singular)
+  for (int i = 0; i <= strat->sl; ++i)
+  {
+    if (strat->S[i] != NULL)
+    {
+      LObject Lp;
+      Lp.i_r = -1;
+      Lp.ecart = 0; Lp.length = 0;
+      Lp.lcm = pInit(); pLcm(h,strat->S[i],Lp.lcm); pSetm(Lp.lcm);
+      if (strat->fromT && !TEST_OPT_INTSTRATEGY) pNorm(h);
+      Lp.p = ksCreateShortSpoly(strat->S[i], h, strat->tailRing);
+      // even if Lp.p == NULL, we use it to prune other lcm's
+      Lp.p1 = strat->S[i]; Lp.p2 = h;
+      // determine sugar
+      long d1=0, d2=0;
+      // first get sugar of multiples
+      for (int i = 1; i <= currRing->N; ++i)
+      {
+        /*d1 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p1,i, currRing))*p_Weight(i, currRing);
+        d2 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p2,i, currRing))*p_Weight(i, currRing);*/
+        d1 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p1,i, currRing));
+        d2 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p2,i, currRing));
+      }
+      // now determine sugar of spoly
+      /*long duf1 = d1 + p_WDegree(Lp.p1, currRing);
+      long duf2 = d2 + p_WDegree(Lp.p2, currRing);*/ 
+      long duf1 = d1 + strat->R[strat->S_2_R[i]]->weighted_sugar;
+      long duf2 = d2 + strat->P.weighted_sugar;
+      Lp.weighted_sugar = (duf1 >= duf2) ? duf1 : duf2;
+      // round out Lp
+      if (atR >= 0) { Lp.i_r1 = strat->S_2_R[i]; Lp.i_r2 = atR; }
+      else { Lp.i_r1 = Lp.i_r2 = -1; }
+      if (Lp.p == NULL)
+      {
+        // We have to do something, because Singular wants to know p
+        // just to put Lp into L, but we should probably adopt a less costly approach.
+        Lp.p = Lp.lcm;
+        Lp.FDeg = Lp.pFDeg(); // shut up, Singular!
+      }
+      else
+      {
+        assume(pNext(Lp.p) == NULL);
+        pNext(Lp.p) = strat->tail;
+        strat->initEcartPair(&Lp,strat->S[i],h,strat->ecartS[i],ecart);
+      }
+      enterL(&(strat->B), &(strat->Bl), &(strat->Bmax),Lp,dynamicPositionInL(strat->B,strat->Bl,&Lp,strat));
+    }
+  }
+  // step 3: eliminate new pairs using Buchberger's lcm criterion
+  for (int i = strat->Bl; i >= 0; --i)
+  {
+    bool deleted_pair = false;
+    // do not (yet) eliminate the ones that satisfy Buchberger's gcd criterion
+    if (!pHasNotCF(strat->B[i].p1, strat->B[i].p2))
+      for (int j = strat->Bl; j >= 0 && !deleted_pair; --j)
+        if (i != j)
+          if (pLmDivisibleBy(strat->B[j].lcm, strat->B[i].lcm))
+          {
+            if (strat->B[i].lcm == strat->B[i].p) strat->B[i].p = NULL;
+            deleteInL(strat->B, &strat->Bl, i, strat);
+            deleted_pair = true; // force a break from this loop
+          }
+  }
+  // step 4: eliminate new pairs using Buchberger's gcd criterion or zero-poly
+  for (int i = strat->Bl; i >= 0; --i)
+  {
+    if (pHasNotCF(strat->B[i].p1, strat->B[i].p2))
+      deleteInL(strat->B, &strat->Bl, i, strat);
+    else if (strat->B[i].p == strat->B[i].lcm)
+    {
+      strat->B[i].p = NULL;
+      deleteInL(strat->B, &strat->Bl, i, strat);
+    }
+  }
+  // done! merge new pairs into old pairs
+  kMergeBintoL(strat);
 }
 
 /*2

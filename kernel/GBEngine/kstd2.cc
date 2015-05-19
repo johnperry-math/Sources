@@ -1617,7 +1617,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
     for (int i = 0; i <= strat->Ll; ++i)
     {
       strat->L[i].weighted_sugar = 0;
-      for (int j = 0; j < currRing->N; ++j)
+      for (int j = 1; j <= currRing->N; ++j)
         strat->L[i].weighted_sugar += p_GetExp(strat->L[i].p, j, currRing);
       cout << "weighted sugar is " << strat->L[i].weighted_sugar << " for ";
       pWrite(strat->L[i].p);
@@ -1672,8 +1672,12 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
   {
     //cout << "looping in basis\n";
     cout << "strat->Ll (number of critical pairs): " << strat->Ll << endl;
-    for (int pairi = 0; pairi <= strat->Ll; pairi++) pWrite((strat->L[pairi].lcm == NULL) ? strat->L[pairi].p : strat->L[pairi].lcm);
-    //cout << "current skeleton\n" << skel << endl;
+    for (int pairi = 0; pairi <= strat->Ll; pairi++)
+    {
+      cout << '\t' << strat->L[pairi].weighted_sugar << ' ';
+      pWrite((strat->L[pairi].lcm == NULL) ? strat->L[pairi].p : strat->L[pairi].lcm);
+    }
+    cout << "current skeleton\n" << skel << endl;
     #ifdef KDEBUG
       loop_count++;
       if (TEST_OPT_DEBUG) messageSets(strat);
@@ -1876,7 +1880,10 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
           superenterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
         else
 #endif
-          enterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
+          if (strat->isDynamic)
+            initenterpairsDynamic(strat->P.p, strat->sl, strat->P.ecart, pos, strat, strat->tl);
+          else
+            enterpairs(strat->P.p,strat->sl,strat->P.ecart,pos,strat, strat->tl);
         // posInS only depends on the leading term
         strat->enterS(strat->P, pos, strat, strat->tl);
 #if 0
@@ -1990,7 +1997,6 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
 #endif /* KDEBUG */
   idTest(strat->Shdl);
   cout << num_spols << " s-polynomials computed\n";
-  cout << IDELEMS(strat->Shdl) << " polynomials in basis\n";
 
   return (strat->Shdl);
 }

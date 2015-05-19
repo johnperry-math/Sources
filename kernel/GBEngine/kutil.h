@@ -799,4 +799,7 @@ ideal bbaShift(ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int upto
 extern  int (*test_PosInT)(const TSet T,const int tl,LObject &h);
 extern  int (*test_PosInL)(const LSet set, const int length,
                 LObject* L,const kStrategy strat);
+
+void initenterpairsDynamic(poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR = -1);
+
 #endif

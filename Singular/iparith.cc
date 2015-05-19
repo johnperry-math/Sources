@@ -4989,6 +4989,7 @@ static BOOLEAN jjDSTD(leftv res, leftv u, leftv v)
   ideal result = kStd(u_id, NULL, hom, NULL, NULL, 0, 0, NULL, method);
   cout << "WARNING: ring has changed\n";
   idSkipZeroes(result);
+  cout << IDELEMS(result) << " polys in basis\n";
   res->data = (char *)result;
   setFlag(res,FLAG_STD);
   return FALSE;
@@ -6658,7 +6659,6 @@ static BOOLEAN jjBREAK1(leftv, leftv v)
 }
 static BOOLEAN jjCALL1ARG(leftv res, leftv v)
 {
-  /* YO */if (currRing && currRing->order && currRing->order[0] != 0) { rWrite(currRing,false); }
   return iiExprArith1(res,v,iiOp);
 }
 static BOOLEAN jjCALL2ARG(leftv res, leftv u)
@@ -8034,8 +8034,6 @@ BOOLEAN iiExprArith1Tab(leftv res, leftv a, int op, struct sValCmd1* dA1, int at
           res->next=(leftv)omAllocBin(sleftv_bin);
           failed=iiExprArith1(res->next,a->next,op);
         }
-  /* YO */
-  if (currRing && currRing->order && currRing->order[0] != 0) { rWrite(currRing,false); }
         a->CleanUp();
         return failed;
       }
@@ -8156,7 +8154,6 @@ BOOLEAN iiExprArith1(leftv res, leftv a, int op)
     BOOLEAN failed=FALSE;
     iiOp=op;
     int i=iiTabIndex(dArithTab1,JJTAB1LEN,op);
-  /* YO */if (currRing && currRing->order && currRing->order[0] != 0) { rWrite(currRing,false); }
     return iiExprArith1Tab(res,a,op, dArith1+i,at,dConvertTypes);
   }
   a->CleanUp();
@@ -8485,13 +8482,10 @@ BOOLEAN iiExprArithM(leftv res, leftv a, int op)
         res->rtyp=dArithM[i].res;
         if (currRing!=NULL)
         {
-  /* YO */if (currRing && currRing->order && currRing->order[0] != 0) { rWrite(currRing,false); }
           if (check_valid(dArithM[i].valid_for,op)) break;
-  /* YO */if (currRing && currRing->order && currRing->order[0] != 0) { rWrite(currRing,false); }
         }
         if (traceit&TRACE_CALL)
           Print("call %s(... (%d args))\n", iiTwoOps(op),args);
-  /* YO */if (currRing && currRing->order && currRing->order[0] != 0) { rWrite(currRing,false); }
         if ((failed=dArithM[i].p(res,a))==TRUE)
         {
           break;// leave loop, goto error handling

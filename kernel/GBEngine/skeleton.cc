@@ -341,17 +341,17 @@ bool operator<(const ray &first_ray, const ray &second_ray)
 {
   bool result = true;
   ulong i = 0;
-  bool checking = true;
-  while (checking and i < first_ray.dim)
+  bool equal = true;
+  while (equal and i < first_ray.dim)
   {
     if (first_ray[i] != second_ray[i])
     {
-      checking = false;
+      equal = false;
       result = first_ray[i] < second_ray[i];
     }
     ++i;
   }
-  return result and i < first_ray.dim;
+  return result and (not equal);
 }
 
 edge::edge(const ray &first_ray, const ray &second_ray)
@@ -466,7 +466,7 @@ skeleton::~skeleton()
 
 bool skeleton::ddm(const constraint &constraint)
 {
-  //cout << "processing constraint " << constraint << endl;
+  cout << "processing constraint " << constraint << endl;
   // innocent until proven guilty
   bool consistent = true;
   // sort the rays into the ones above, below, or on the constraint
@@ -477,22 +477,22 @@ bool skeleton::ddm(const constraint &constraint)
     if (dp > 0)
     {
       rays_above.insert(*riter);
-      //cout << *riter << " is above constraint\n";
+      cout << *riter << " is above constraint\n";
     }
     else if (dp < 0)
     {
       rays_below.insert(*riter);
-      //cout << *riter << " is below constraint\n";
+      cout << *riter << " is below constraint\n";
     }
     else
     {
       ray old_ray = *riter;
       old_ray.add_active_constraint(constraint);
       rays_on.insert(old_ray);
-      //cout << *riter << " is on constraint\n";
+      cout << *riter << " is on constraint\n";
     }
   }
-  //cout << rays_above.size() << " rays above; " << rays_below.size() << " rays below; " << rays_on.size() << " rays on\n";
+  cout << rays_above.size() << " rays above; " << rays_below.size() << " rays below; " << rays_on.size() << " rays on\n";
   // check for constitency
   if (rays_above.size() == 0)
   {
@@ -518,7 +518,7 @@ bool skeleton::ddm(const constraint &constraint)
           (rays_above.find(v) != rays_above.end() or rays_on.find(v) != rays_on.end())
          )
       {
-        //cout << "old ray preserved: " << u << ',' << v << "\n";
+        cout << "old edge preserved: " << u << ',' << v << "\n";
         edges_above.insert(e);
       }
     }
@@ -537,7 +537,7 @@ bool skeleton::ddm(const constraint &constraint)
         w.find_and_add_active_constraints(constraints);
         rays_on.insert(w);
         edges_on.insert(edge(u,w));
-        //cout << "new ray (u,v) is " << w << " with constraints " << endl;
+        cout << "new ray (u,v) is " << w << " with constraints " << endl;
       }
       else if (rays_above.find(v) != rays_above.end() and rays_below.find(u) != rays_below.end())
       {
@@ -547,7 +547,7 @@ bool skeleton::ddm(const constraint &constraint)
         w.find_and_add_active_constraints(constraints);
         rays_on.insert(w);
         edges_on.insert(edge(v,w));
-        //cout << "new ray (v,u) is " << w << " with constraints " << endl;
+        cout << "new ray (v,u) is " << w << " with constraints " << endl;
       }
     }
     // clear the old rays, add the new ones (above and on the constraint)
@@ -556,18 +556,24 @@ bool skeleton::ddm(const constraint &constraint)
     {
       rays.insert(*riter);
     }
+    cout << "inserted rays above; rays on is\n";
+    for (set<ray>::iterator riter = rays_on.begin(); riter != rays_on.end(); ++riter) { cout << '\t' << *riter << endl; }
     for (set<ray>::iterator riter = rays_on.begin(); riter != rays_on.end(); ++riter)
     {
-      rays.insert(*riter);
+      cout << "inserting " << *riter << endl;
+      cout << "return value: " << *(get<0>(rays.insert(*riter)));
+      for (set<ray>::iterator siter = rays.begin(); siter != rays.end(); ++siter) { cout << '\t' << *siter << endl; }
     }
+    cout << rays.size() << " rays\n";
+    for (set<ray>::iterator riter = rays.begin(); riter != rays.end(); ++riter) { cout << '\t' << *riter << endl; }
     // add the good constraint
     constraints.push_back(constraint);
     // determine new edges
     set<edge> edges_new = adjacencies_by_graphs(rays_on);
     // combine new edges with old ones that are known to be valid
     edges = union_of_edge_sets(union_of_edge_sets(edges_above, edges_on), edges_new);
-    //cout << edges.size() << " edges\n";
-    //for (set<edge>::iterator eiter = edges.begin(); eiter != edges.end(); ++eiter) { cout << *eiter << ' '; } cout << '\n';
+    cout << edges.size() << " edges\n";
+    for (set<edge>::iterator eiter = edges.begin(); eiter != edges.end(); ++eiter) { cout << *eiter << ' '; } cout << '\n';
   }
   return consistent;
 }
