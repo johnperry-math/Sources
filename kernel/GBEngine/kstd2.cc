@@ -1672,12 +1672,12 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
   {
     //cout << "looping in basis\n";
     cout << "strat->Ll (number of critical pairs): " << strat->Ll << endl;
-    for (int pairi = 0; pairi <= strat->Ll; pairi++)
+    /*for (int pairi = 0; pairi <= strat->Ll; pairi++)
     {
       cout << '\t' << strat->L[pairi].weighted_sugar << ' ';
       pWrite((strat->L[pairi].lcm == NULL) ? strat->L[pairi].p : strat->L[pairi].lcm);
-    }
-    cout << "current skeleton\n" << skel << endl;
+    }*/
+    //cout << "current skeleton\n" << skel << endl;
     #ifdef KDEBUG
       loop_count++;
       if (TEST_OPT_DEBUG) messageSets(strat);
@@ -1731,7 +1731,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
           break;
         }
       }
-      cout << "building "; pWrite(pHead(strat->P.p1)); pWrite(pHead(strat->P.p2)); pWrite(strat->P.lcm);
+      //cout << "building "; pWrite(pHead(strat->P.p1)); pWrite(pHead(strat->P.p2)); pWrite(strat->P.lcm);
       // create the real one
       ksCreateSpoly(&(strat->P), NULL, strat->use_buckets,
                     strat->tailRing, m1, m2, strat->R);
@@ -1739,7 +1739,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
     }
     else if (strat->P.p1 == NULL)
     {
-      cout << "building "; pWrite(strat->P.p); pWrite(strat->P.p1); pWrite(strat->P.p2);
+      //cout << "building "; pWrite(strat->P.p); pWrite(strat->P.p1); pWrite(strat->P.p2);
       if (strat->minim > 0)
         strat->P.p2=p_Copy(strat->P.p, currRing, strat->tailRing);
       // for input polys, prepare reduction
@@ -1822,6 +1822,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
           ray new_weight = ray_sum(skel.get_rays());
           new_weight.simplify_ray();
           cout << "have ray " << new_weight << "\n";
+          cout << "pause\n";
           // adjust currRing
           //cout << "adjusting weights\n";
           ring oldR = dynR;
@@ -1919,13 +1920,6 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
 #endif /* KDEBUG */
     kTest_TS(strat);
   }
-  /*cout << "completed with basis:\n";
-  for (int i=0; i < strat->sl; ++i)
-  {
-    cout << '\t'; pWrite(strat->S[i]);
-  }
-  cout << "completed with ring:\n";
-  rWrite(currRing, true); cout << endl;*/
   if (dynamic_method) IDRING(currRingHdl) = currRing;
 #ifdef KDEBUG
 #if MYTEST

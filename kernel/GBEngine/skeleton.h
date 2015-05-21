@@ -279,8 +279,8 @@ public:
   void find_and_add_active_constraints(const vector<constraint> &);
 
   /** Returns the list of known active constraints. */
-  inline set<constraint> get_known_active_constraints() const
-  { return known_active_constraints; };
+  inline const set<constraint> * get_known_active_constraints() const
+  { return & known_active_constraints; };
 
   /**
     Assignment operator; assigns the value of `other` to `this`.
@@ -492,14 +492,14 @@ set<constraint> intersections_of_active_constraints(
   Returns `true` if and only if the first set is a subset of the second.
 */
 bool is_first_subset_of_second(
-      const set<constraint>, const set<constraint>
+      const set<constraint> &, const set<constraint> &
   );
 
 /**
   \ingroup SetArithmetic
   Returns the unions of two sets of edges.
 */
-set<edge> union_of_edge_sets(set<edge>, set<edge>);
+set<edge> union_of_edge_sets(const set<edge> &, const set<edge> &);
 
 /**@}*/
 

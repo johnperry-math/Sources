@@ -70,17 +70,28 @@ class PPWithIdeal
       I = idInit(F.size() + 1);
       for (unsigned long i = 0; i < F.size(); ++i) { I->m[i] = F[i]; }
       I->m[F.size()] = u;
+      hNum = NULL;
+      hPol = NULL;
       // for series comparison, need the same denom, so first series
-      hNum = hFirstSeries(I, NULL, NULL); // third one to be modified for graded
+      //hNum = hFirstSeries(I, NULL, NULL); // third one to be modified for graded
       // for polynomial comparison, need the second series
-      hPol = HilbertPolynomial(hSecondSeries(hNum), scDimInt(I));
+      //hPol = HilbertPolynomial(hSecondSeries(hNum), scDimInt(I));
     };
     ~PPWithIdeal() { /*idDelete(&I, currRing);*/ }
     inline poly getPP() const { return t; };
     inline ideal getIdeal() const { return I; };
     inline ray getOrdering() const { return ordering; };
-    inline intvec * getHilbertNumerator() const { return hNum; };
-    inline poly getHilbertPolynomial() const { return hPol; };
+    inline intvec * getHilbertNumerator()
+    {
+      if (hNum != NULL) return hNum; else return hNum = hFirstSeries(I, NULL, NULL);
+    };
+    inline poly getHilbertPolynomial()
+    {
+      if (hPol != NULL) return hPol;
+      else
+        return hPol = HilbertPolynomial(hSecondSeries(getHilbertNumerator()),
+                                                      scDimInt(I));
+    };
   protected:
     poly t; ideal I; ray ordering; intvec * hNum; poly hPol;
 };

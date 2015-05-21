@@ -7,5 +7,5 @@ ideal i=s+t+u+v+w+x+y+z,
         stuvwx+tuvwxy+uvwxyz+vwxyzs+wxyzst+xyzstu+yzstuv+zstuvw,
         stuvwxy+tuvwxyz+uvwxyzs+vwxyzst+wxyzstu+xyzstuv+yzstuvw+zstuvwx,
         stuvwxyz-h8;
-ideal j=dstd(i,2);
+ideal j=dstd(i,1);
 basering;

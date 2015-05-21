@@ -132,17 +132,12 @@ ray::ray(const vector<ulonglong> &entries)
 }
 
 ray::ray(const ray &old_ray)
+        : dim(old_ray.dim),
+          known_active_constraints(old_ray.known_active_constraints)
 {
-  dim = old_ray.dim;
   coords = new ulonglong[dim];
   for (ulong i = 0; i < dim; ++i)
     coords[i] = old_ray.coords[i];
-  // need to copy each constraint, to avoid errors in the destructor
-  set<constraint> old_constraints = old_ray.known_active_constraints;
-  for (set<constraint>::iterator citer = old_constraints.begin();
-        citer != old_constraints.end();
-        ++citer)
-    known_active_constraints.insert(*citer);
 }
 
 ray::~ray()
@@ -466,7 +461,7 @@ skeleton::~skeleton()
 
 bool skeleton::ddm(const constraint &constraint)
 {
-  cout << "processing constraint " << constraint << endl;
+  // cout << "processing constraint " << constraint << endl;
   // innocent until proven guilty
   bool consistent = true;
   // sort the rays into the ones above, below, or on the constraint
@@ -477,22 +472,22 @@ bool skeleton::ddm(const constraint &constraint)
     if (dp > 0)
     {
       rays_above.insert(*riter);
-      cout << *riter << " is above constraint\n";
+      // cout << *riter << " is above constraint\n";
     }
     else if (dp < 0)
     {
       rays_below.insert(*riter);
-      cout << *riter << " is below constraint\n";
+      // cout << *riter << " is below constraint\n";
     }
     else
     {
       ray old_ray = *riter;
       old_ray.add_active_constraint(constraint);
       rays_on.insert(old_ray);
-      cout << *riter << " is on constraint\n";
+      // cout << *riter << " is on constraint\n";
     }
   }
-  cout << rays_above.size() << " rays above; " << rays_below.size() << " rays below; " << rays_on.size() << " rays on\n";
+  // cout << rays_above.size() << " rays above; " << rays_below.size() << " rays below; " << rays_on.size() << " rays on\n";
   // check for constitency
   if (rays_above.size() == 0)
   {
@@ -518,7 +513,7 @@ bool skeleton::ddm(const constraint &constraint)
           (rays_above.find(v) != rays_above.end() or rays_on.find(v) != rays_on.end())
          )
       {
-        cout << "old edge preserved: " << u << ',' << v << "\n";
+        // cout << "old edge preserved: " << u << ',' << v << "\n";
         edges_above.insert(e);
       }
     }
@@ -537,7 +532,7 @@ bool skeleton::ddm(const constraint &constraint)
         w.find_and_add_active_constraints(constraints);
         rays_on.insert(w);
         edges_on.insert(edge(u,w));
-        cout << "new ray (u,v) is " << w << " with constraints " << endl;
+        // cout << "new ray (u,v) is " << w << " with constraints " << endl;
       }
       else if (rays_above.find(v) != rays_above.end() and rays_below.find(u) != rays_below.end())
       {
@@ -547,7 +542,7 @@ bool skeleton::ddm(const constraint &constraint)
         w.find_and_add_active_constraints(constraints);
         rays_on.insert(w);
         edges_on.insert(edge(v,w));
-        cout << "new ray (v,u) is " << w << " with constraints " << endl;
+        // cout << "new ray (v,u) is " << w << " with constraints " << endl;
       }
     }
     // clear the old rays, add the new ones (above and on the constraint)
@@ -556,24 +551,25 @@ bool skeleton::ddm(const constraint &constraint)
     {
       rays.insert(*riter);
     }
-    cout << "inserted rays above; rays on is\n";
-    for (set<ray>::iterator riter = rays_on.begin(); riter != rays_on.end(); ++riter) { cout << '\t' << *riter << endl; }
+    // cout << "inserted rays above; rays on is\n";
+    // for (set<ray>::iterator riter = rays_on.begin(); riter != rays_on.end(); ++riter) { cout << '\t' << *riter << endl; }
     for (set<ray>::iterator riter = rays_on.begin(); riter != rays_on.end(); ++riter)
     {
-      cout << "inserting " << *riter << endl;
-      cout << "return value: " << *(get<0>(rays.insert(*riter)));
-      for (set<ray>::iterator siter = rays.begin(); siter != rays.end(); ++siter) { cout << '\t' << *siter << endl; }
+      // cout << "inserting " << *riter << endl;
+      //cout << "return value: " << *(get<0>(rays.insert(*riter)));
+      rays.insert(*riter);
+      //for (set<ray>::iterator siter = rays.begin(); siter != rays.end(); ++siter) { cout << '\t' << *siter << endl; }
     }
-    cout << rays.size() << " rays\n";
-    for (set<ray>::iterator riter = rays.begin(); riter != rays.end(); ++riter) { cout << '\t' << *riter << endl; }
+    //cout << rays.size() << " rays\n";
+    // for (set<ray>::iterator riter = rays.begin(); riter != rays.end(); ++riter) { cout << '\t' << *riter << endl; }
     // add the good constraint
     constraints.push_back(constraint);
     // determine new edges
     set<edge> edges_new = adjacencies_by_graphs(rays_on);
     // combine new edges with old ones that are known to be valid
     edges = union_of_edge_sets(union_of_edge_sets(edges_above, edges_on), edges_new);
-    cout << edges.size() << " edges\n";
-    for (set<edge>::iterator eiter = edges.begin(); eiter != edges.end(); ++eiter) { cout << *eiter << ' '; } cout << '\n';
+    //cout << edges.size() << " edges\n";
+    //for (set<edge>::iterator eiter = edges.begin(); eiter != edges.end(); ++eiter) { cout << *eiter << ' '; } cout << '\n';
   }
   return consistent;
 }
@@ -624,7 +620,7 @@ set<constraint> intersections_of_active_constraints(
 }
 
 bool is_first_subset_of_second(
-    const set<constraint>a, const set<constraint>b
+    const set<constraint> & a, const set<constraint> & b
 )
 {
   // highly unoptimized, but off the top of my head i don't know how to do better
@@ -638,14 +634,21 @@ bool is_first_subset_of_second(
   return result;
 }
 
-set<edge> union_of_edge_sets(const set<edge> a, const set<edge> b)
+set<edge> union_of_edge_sets(const set<edge> & a, const set<edge> & b)
 {
-  // highly unoptimized, but off the top of my head i don't know how to do better
+  // optimized with a hint for the position (riter) of the new element
   set<edge> result;
-  for (set<edge>::iterator eiter = a.begin(); eiter != a.end(); ++eiter)
-    result.insert(*eiter);
-  for (set<edge>::iterator eiter = b.begin(); eiter != b.end(); ++eiter)
-    result.insert(*eiter);
+  set<edge>::iterator riter = result.begin();
+  set<edge>::iterator aiter = a.begin();
+  set<edge>::iterator biter = b.begin();
+  while (aiter != a.end() && biter != b.end())
+  {
+    if (*aiter < *biter) { riter = result.insert(riter, *aiter); ++aiter; }
+    else if (*aiter == *biter) { riter = result.insert(riter, *aiter); ++aiter; ++biter; }
+    else { riter = result.insert(riter, *biter); ++biter; }
+  }
+  while (aiter != a.end()) { riter = result.insert(riter, *aiter); ++aiter; }
+  while (biter != b.end()) { riter = result.insert(riter, *biter); ++biter; }
   return result;
 }
 
@@ -658,7 +661,7 @@ set<edge> skeleton::adjacencies_by_graphs(set<ray> new_rays)
   {
     ray u = *riter;
     tested_rays.insert(u);
-    set<constraint> zero_u = u.get_known_active_constraints();
+    const set<constraint> * zero_u = u.get_known_active_constraints();
     // D's rays have at least dim - 2 active constraints in common with u
     // (see Proposition 3 in Zolotych's paper)
     set<ray> D;
@@ -666,9 +669,9 @@ set<edge> skeleton::adjacencies_by_graphs(set<ray> new_rays)
       if (*riter != *siter)
       {
         ray v = *siter;
-        set<constraint> zero_v = v.get_known_active_constraints();
+        const set<constraint> * zero_v = v.get_known_active_constraints();
         //cout << "checking constraints of " << u << " against " << v  << " for " << dim << endl;
-        if (number_of_common_constraints(zero_u, zero_v) >= dim - 2)
+        if (number_of_common_constraints(*zero_u, *zero_v) >= dim - 2)
         {
           //cout << "accept " << u << ',' << v << " from active constraints\n";
           D.insert(v);
@@ -684,7 +687,7 @@ set<edge> skeleton::adjacencies_by_graphs(set<ray> new_rays)
       ray v = *diter;
       if (tested_rays.find(v) == tested_rays.end()) // avoid doubling edges
       {
-        set<constraint> zero_v = v.get_known_active_constraints();
+        const set<constraint> * zero_v = v.get_known_active_constraints();
         // WARNING: I have commented out the following line, because it seems
         // unnecessary: v is in D iff the size of the intersection is at least
         // dim - 2. If there are unexpected bugs, this commenting should be
@@ -692,7 +695,7 @@ set<edge> skeleton::adjacencies_by_graphs(set<ray> new_rays)
         // if (intersections_of_active_constraints(zero_u, zero_v).size() >= dim - 2)
         {
           bool can_be_added = true;
-          set<constraint> Zuv = intersections_of_active_constraints(zero_u, zero_v);
+          set<constraint> Zuv = intersections_of_active_constraints(*zero_u, *zero_v);
           for (
                set<ray>::iterator dditer = D.begin();
                dditer != D.end() and can_be_added;
@@ -701,7 +704,7 @@ set<edge> skeleton::adjacencies_by_graphs(set<ray> new_rays)
           {
             ray w = *dditer;
             if (!(w == v))
-              if (is_first_subset_of_second(Zuv,w.get_known_active_constraints()))
+              if (is_first_subset_of_second(Zuv,*(w.get_known_active_constraints())))
               {
                 //cout << "rejecting " << u << ',' << v << " because of " << w << endl;
                 can_be_added = false;

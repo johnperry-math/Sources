@@ -15,7 +15,7 @@ using std::list;
 
 ring QQt = NULL;
 
-bool LessByHilbert (const PPWithIdeal &a, const PPWithIdeal &b)
+bool LessByHilbert (PPWithIdeal &a, PPWithIdeal &b)
 {
   bool result;
   ring Rx = currRing;
@@ -60,7 +60,7 @@ bool LessByHilbert (const PPWithIdeal &a, const PPWithIdeal &b)
   return result;
 };
 
-bool LessByHilbertThenDegree(const PPWithIdeal &a, const PPWithIdeal &b)
+bool LessByHilbertThenDegree(PPWithIdeal &a, PPWithIdeal &b)
 {
   bool result;
   ring Rx = currRing;
@@ -106,6 +106,57 @@ bool LessByHilbertThenDegree(const PPWithIdeal &a, const PPWithIdeal &b)
         result = false;
       else
         result = (*h1)[i] < (*h2)[i];
+    }
+  }
+  return result;
+};
+
+bool LessByDegreeThenHilbert(PPWithIdeal &a, PPWithIdeal &b)
+{
+  bool result;
+  ring Rx = currRing;
+  int n = Rx->N;
+  // first check the weighted degree
+  if (p_WDegree(a.getPP(), Rx) < p_WDegree(b.getPP(), Rx))
+    result = true;
+  else if (p_WDegree(a.getPP(), Rx) > p_WDegree(b.getPP(), Rx))
+    result = false;
+  else {
+    // now check the coefficients of the Hilbert polynomial
+    poly HPdiff = p_Minus_mm_Mult_qq(p_Copy(a.getHilbertPolynomial(), QQt), p_One(QQt), b.getHilbertPolynomial(), QQt);
+    if (HPdiff != NULL)
+      result = !(n_IsZero(p_GetCoeff(HPdiff, QQt), QQt) || n_GreaterZero(p_GetCoeff(HPdiff, QQt), QQt));
+    else // use Hilbert series
+    {
+      intvec * h1 = a.getHilbertNumerator();
+      intvec * h2 = b.getHilbertNumerator();
+      int i = 1;
+      for ( /* already initialized */ ;
+           i < h1->length() && i < h2->length() && (*h1)[i] == (*h2)[i];
+           i++)
+      { /* taken care of in loop */ }
+      if (i >= h1->length())
+      {
+        if (i >= h2->length())
+        {
+          int i = 1;
+          while (i <= n && p_GetExp(a.getPP(),i,Rx) == p_GetExp(b.getPP(),i,Rx))
+            ++i;
+          if (i == n)
+            result = false;
+          else
+            result = p_GetExp(a.getPP(), i, Rx) < p_GetExp(b.getPP(), i, Rx);
+        }
+        else
+          result = true;
+      }
+      else
+      {
+        if (i > h2->length())
+          result = false;
+        else
+          result = (*h1)[i] < (*h2)[i];
+      }
     }
   }
   return result;
@@ -440,6 +491,7 @@ void SelectMonomial(
   {
     case ORD_HILBERT_THEN_LEX: possibleIdealsBasic.sort(LessByHilbert); break;
     case ORD_HILBERT_THEN_DEG: possibleIdealsBasic.sort(LessByHilbertThenDegree); break;
+    case DEG_THEN_ORD_HILBERT: possibleIdealsBasic.sort(LessByDegreeThenHilbert); break;
     default: possibleIdealsBasic.sort(LessByHilbert);
   }
   /*cout << "sorted list\n";
@@ -464,7 +516,7 @@ void SelectMonomial(
     {
       skeleton newSkeleton(currSkel);
       vector<constraint> newvecs;
-      cout << "testing "; p_Write((*siter).getPP(),Rx);
+      // cout << "testing "; p_Write((*siter).getPP(),Rx);
       //ConstraintsForNewPP(*siter, compatiblePPs, newvecs);
       ConstraintsForNewPP(*siter, PPunion, newvecs);
       if (newSkeleton.ddm(newvecs))
@@ -480,7 +532,7 @@ void SelectMonomial(
       else
         // this monomial is not, in fact, compatible
         compatiblePPs.erase(siter->getPP());
-      cout << "works? " << !searching << endl;
+      // cout << "works? " << !searching << endl;
     }
   }
   else if (possibleIdealsBasic.size() == 1 && compatiblePPs.size() != 1)

@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
-using std::cout; using std::endl;
 
 #ifdef KDEBUG
 #undef KDEBUG
@@ -1793,12 +1792,10 @@ int dynamicPositionInT(const TSet set, const int length, LObject &Lp)
   int i;
   int an = 0;
   int en = length;
-  cout << "sorting key " << Lp.weighted_sugar << ' '; pWrite(Lp.p);
   loop
   {
     if (an >= en-1)
     {
-      cout << "comparing with:\n\t"; pWrite(set[an].p); cout << '\t'; pWrite(set[en].p);
       if (set[an].weighted_sugar != set[en].weighted_sugar)
       {
         if (set[an].weighted_sugar < Lp.weighted_sugar) return an;
@@ -1857,7 +1854,6 @@ int cmpDynPair(LObject &a, LObject &b)
   {
     if (b.lcm != NULL) return -1; // consider generators smaller
     // both are generators; compare leading terms
-    cout << "comparing\n\t"; pWrite(a.p); cout << '\t'; pWrite(b.p); cout << p_LmCmp(a.p,b.p,currRing) << endl;
     return p_LmCmp(a.p, b.p, currRing);
   }
 }
@@ -1873,12 +1869,10 @@ int dynamicPositionInL(const LSet set, const int length, LObject *Lp, kStrategy 
   int i;
   int an = 0;
   int en = length;
-  cout << "sorting key " << Lp->weighted_sugar << ' '; pWrite((Lp->lcm == NULL) ? Lp->p : Lp->lcm);
   loop
   {
     if (an >= en-1)
     {
-      cout << "last pair: " << an << ',' << en << endl; 
       if (cmpDynPair(set[en], *Lp) > 0) return en + 1; // Lp smaller than set[en]
       if (cmpDynPair(set[an], *Lp) <= 0) return an; // Lp larger than or equal to set[an]
       return en; // Lp larger than set[en], smaller than set[an]
@@ -1887,78 +1881,8 @@ int dynamicPositionInL(const LSet set, const int length, LObject *Lp, kStrategy 
     // prefer smaller sugar
     if (cmpDynPair(set[i], *Lp) > 0) an = i;
     else en = i;
-    /*
-    if (set[i].weighted_sugar > Lp->weighted_sugar) an=i;  // discard larger sugars
-    else if (set[i].weighted_sugar < Lp->weighted_sugar) en=i; // discard smaller sugars
-    else if (set[i].lcm==NULL && Lp->lcm != NULL) en = i;  // prefer generator to new
-    else if (set[i].lcm != NULL && Lp->lcm == NULL) an = i; // should not occur
-    else if (set[i].lcm == NULL && Lp->lcm == NULL)
-    {
-      if (p_LmCmp(set[i].p, Lp->p, currRing)) an = i;
-      else en = i;
-    }
-    // prefer smaller lcm
-    else if (p_LmCmp(set[i].lcm,Lp->lcm,currRing)==1) an = i; // discard larger lcms
-    else en = i; // discard smaller lcms (Lp->lcm too large)
-    */
   }
 }
-
-/*int dynamicPosition(const LSet set, const int length, LObject *Lp, kStrategy strat)
-{
-  if (length < 0) return 0;
-
-  if (set[length].weighted_sugar > Lp->weighted_sugar)
-    return length+1;
-
-  int i;
-  int an = 0;
-  int en = length;
-  int Lp_ws = Lp->weighted_sugar;
-  int Lp_wd = p_WDegree(Lp->lcm, currRing);
-  cout << "sorting key for "; pWrite(Lp->lcm);
-  cout << "\t" << Lp_ws << "\t" << Lp_wd << '\n';
-  loop
-  {
-    //cout << "\tan" << an << "\ten" << en << '\n';
-    if (an >= en-1)
-    {
-      if (set[an].weighted_sugar == set[en].weighted_sugar)
-      {
-        int an_deg = (set[an].lcm == NULL) ? p_WDegree(set[an].p, currRing) : p_WDegree(set[an].lcm, currRing);
-        int en_deg = (set[en].lcm == NULL) ? p_WDegree(set[en].p, currRing) : p_WDegree(set[en].lcm, currRing);
-        if (an_deg <= Lp_wd) return an;
-        else if (en_deg <= Lp_wd) return en;
-        else return en+1;
-      }
-      else
-      {
-        int j = (set[an].weighted_sugar > Lp_ws) ? en : an;
-        if (set[j].weighted_sugar > Lp_ws) return j+1;
-        else return j;
-      }
-    }
-    i=(an+en) / 2;
-    if (set[i].weighted_sugar == Lp_ws)
-    {
-      if (set[i].lcm != NULL)
-      {
-        if (p_WDegree(set[i].lcm, currRing) > Lp_wd) an=i;
-        else en=i;
-      }
-      else
-      {
-        if (p_WDegree(set[i].p, currRing) > Lp_wd) an=i;
-        else en=i;
-      }
-    }
-    else
-    {
-      if (set[i].weighted_sugar > Lp_ws) an=i;
-      else en=i;
-    }
-  }
-} */
 
 /*2
 * put the pair (s[i],p)  into the set B, ecart=ecart(p)
@@ -2241,7 +2165,6 @@ void enterOnePairSig (int i, poly p, poly pSig, int, int ecart, int isFromQ, kSt
 */
 void enterOnePairSpecial (int i,poly p,int ecart,kStrategy strat, int atR = -1)
 {
-  cout << "enter pair specially\n";
   //PrintS("try ");wrp(strat->S[i]);PrintS(" and ");wrp(p);PrintLn();
   if(pHasNotCF(p,strat->S[i]))
   {
@@ -9433,7 +9356,6 @@ void initBuchMoraShift (ideal F,ideal Q,kStrategy strat)
 */
 void enterOnePairManyShifts (int i, poly p, int ecart, int isFromQ, kStrategy strat, int /*atR*/, int uptodeg, int lV)
 {
-  cout << "enter pair many shiftsly\n";
   /* p comes from strat->P.p, that is LObject with LM in currRing and Tail in tailRing */
 
   assume(p_LmCheckIsFromRing(p,currRing));
