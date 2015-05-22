@@ -1584,6 +1584,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
   ring dynR;
   vector<poly> CurrentLPPs;
   //vector<poly> CurrentPolys;
+  //ring originalRing = currRing;
   skeleton skel(currRing->N);
   if (dynamic_method)
   {
@@ -1598,7 +1599,8 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
     convertIdeal(F, oldR, dynR);
     convertIdeal(Q, oldR, dynR);
     rChangeCurrRing(dynR);
-    rDelete(oldR);
+    // do not delete originalRing
+    //rDelete(oldR);
   }
 
   initBuchMoraCrit(strat); /*set Gebauer, honey, sugarCrit*/
@@ -1920,7 +1922,6 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
 #endif /* KDEBUG */
     kTest_TS(strat);
   }
-  if (dynamic_method) IDRING(currRingHdl) = currRing;
 #ifdef KDEBUG
 #if MYTEST
   PrintS("bba finish GB: currRing: "); rWrite(currRing);
@@ -1991,6 +1992,9 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
 #endif /* KDEBUG */
   idTest(strat->Shdl);
   cout << num_spols << " s-polynomials computed\n";
+  // to preserve old ring
+  // if (dynamic_method) IDRING(currRingHdl) = currRing;
+  //if (dynamic_method) { rChangeCurrRing(originalRing); }
 
   return (strat->Shdl);
 }

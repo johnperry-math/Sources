@@ -4983,15 +4983,21 @@ static BOOLEAN jjSTD(leftv res, leftv v)
 }
 static BOOLEAN jjDSTD(leftv res, leftv u, leftv v)
 {
+  ring old_ring = currRing;
   ideal u_id = (ideal)u->Data();
   int method = (int)(long)v->Data();
   tHomog hom=testHomog;
-  ideal result = kStd(u_id, NULL, hom, NULL, NULL, 0, 0, NULL, method);
+  ideal basis = kStd(u_id, NULL, hom, NULL, NULL, 0, 0, NULL, method);
   cout << "WARNING: ring has changed\n";
-  idSkipZeroes(result);
-  cout << IDELEMS(result) << " polys in basis\n";
-  res->data = (char *)result;
-  setFlag(res,FLAG_STD);
+  idSkipZeroes(basis);
+  cout << IDELEMS(basis) << " polys in basis\n";
+  res->data = (char *)basis;
+  //lists result = (lists )omAllocBin(slists_bin);
+  //result->Init(2);
+  //result->m[0].rtyp = RING_CMD;  result->m[0].data = (void *)currRing;
+  //result->m[1].rtyp = IDEAL_CMD; result->m[1].data = (void *)basis;
+  //res->data = (char *)result;
+  rChangeCurrRing(old_ring);
   return FALSE;
 }
 static BOOLEAN jjSort_Id(leftv res, leftv v)

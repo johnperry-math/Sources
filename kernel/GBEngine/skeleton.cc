@@ -769,7 +769,7 @@ skeleton & skeleton::operator=(const skeleton & other)
         citer != other.constraints.end();
         ++citer
       )
-  constraints.push_back(*citer);
+    constraints.push_back(*citer);
   return *this;
 }
 
