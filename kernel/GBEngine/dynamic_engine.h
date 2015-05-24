@@ -81,9 +81,10 @@ class PPWithIdeal
     inline poly getPP() const { return t; };
     inline ideal getIdeal() const { return I; };
     inline ray getOrdering() const { return ordering; };
-    inline intvec * getHilbertNumerator()
+    inline intvec * getHilbertNumerator(intvec *grading = NULL)
     {
-      if (hNum != NULL) return hNum; else return hNum = hFirstSeries(I, NULL, NULL);
+      if (hNum != NULL) return hNum;
+      else return hNum = hFirstSeries(I, grading, NULL);
     };
     inline poly getHilbertPolynomial()
     {

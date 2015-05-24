@@ -4988,10 +4988,13 @@ static BOOLEAN jjDSTD(leftv res, leftv u, leftv v)
   int method = (int)(long)v->Data();
   tHomog hom=testHomog;
   ideal basis = kStd(u_id, NULL, hom, NULL, NULL, 0, 0, NULL, method);
-  cout << "WARNING: ring has changed\n";
+  //cout << "WARNING: ring has changed\n";
   idSkipZeroes(basis);
   cout << IDELEMS(basis) << " polys in basis\n";
-  res->data = (char *)basis;
+  currRing->qideal = basis;
+  res->data = (char *)currRing;
+  cout << "Result is qring whose ideal is the Gröbner basis. Use ideal(_); to extract.\n";
+  cout << "Restoring original ring.\n";
   //lists result = (lists )omAllocBin(slists_bin);
   //result->Init(2);
   //result->m[0].rtyp = RING_CMD;  result->m[0].data = (void *)currRing;

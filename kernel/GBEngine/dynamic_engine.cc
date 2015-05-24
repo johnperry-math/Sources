@@ -111,7 +111,118 @@ bool LessByHilbertThenDegree(PPWithIdeal &a, PPWithIdeal &b)
   return result;
 };
 
+bool LessByGradHilbertThenDegree(PPWithIdeal &a, PPWithIdeal &b)
+{
+  bool result;
+  ring Rx = currRing;
+  int n = Rx->N;
+  // first check the coefficients of the Hilbert polynomial
+  poly HPdiff = p_Minus_mm_Mult_qq(p_Copy(a.getHilbertPolynomial(), QQt), p_One(QQt), b.getHilbertPolynomial(), QQt);
+  if (HPdiff != NULL)
+    result = !(n_IsZero(p_GetCoeff(HPdiff, QQt), QQt) || n_GreaterZero(p_GetCoeff(HPdiff, QQt), QQt));
+  else // use Hilbert series
+  {
+    intvec * weights = new intvec(n+1);
+    for (int i=0; i < n; ++i) weights[i+1] = Rx->wvhdl[0][i]; 
+    intvec * h1 = a.getHilbertNumerator(weights);
+    intvec * h2 = b.getHilbertNumerator(weights);
+    delete weights;
+    int i = 1;
+    for ( /* already initialized */ ;
+         i < h1->length() && i < h2->length() && (*h1)[i] == (*h2)[i];
+         i++)
+    { /* taken care of in loop */ }
+    if (i >= h1->length())
+    {
+      if (i >= h2->length())
+      {
+        if (p_WDegree(a.getPP(), Rx) < p_WDegree(b.getPP(), Rx))
+          result = true;
+        else if (p_WDegree(a.getPP(), Rx) > p_WDegree(b.getPP(), Rx))
+          result = false;
+        else
+        {
+          int i = 1;
+          while (i <= n && p_GetExp(a.getPP(),i,Rx) == p_GetExp(b.getPP(),i,Rx))
+            ++i;
+          if (i == n)
+            result = false;
+          else
+            result = p_GetExp(a.getPP(), i, Rx) < p_GetExp(b.getPP(), i, Rx);
+        }
+      }
+      else
+        result = true;
+    }
+    else
+    {
+      if (i > h2->length())
+        result = false;
+      else
+        result = (*h1)[i] < (*h2)[i];
+    }
+    if (h1 != NULL) delete h1; if (h2 != NULL) delete h2;
+  }
+  return result;
+};
+
 bool LessByDegreeThenHilbert(PPWithIdeal &a, PPWithIdeal &b)
+{
+  bool result;
+  ring Rx = currRing;
+  int n = Rx->N;
+  // first check the weighted degree
+  if (p_WDegree(a.getPP(), Rx) < p_WDegree(b.getPP(), Rx))
+    result = true;
+  else if (p_WDegree(a.getPP(), Rx) > p_WDegree(b.getPP(), Rx))
+    result = false;
+  else {
+    // now check the coefficients of the Hilbert polynomial
+    poly HPdiff = p_Minus_mm_Mult_qq(p_Copy(a.getHilbertPolynomial(), QQt), p_One(QQt), b.getHilbertPolynomial(), QQt);
+    if (HPdiff != NULL)
+      result = !(n_IsZero(p_GetCoeff(HPdiff, QQt), QQt) || n_GreaterZero(p_GetCoeff(HPdiff, QQt), QQt));
+    else // use Hilbert series
+    {
+      intvec * weights = new intvec(n+1);
+      for (int i=0; i < n; ++i) weights[i+1] = Rx->wvhdl[0][i]; 
+      intvec * h1 = a.getHilbertNumerator(weights);
+      intvec * h2 = b.getHilbertNumerator(weights);
+      delete weights;
+      int i = 1;
+      for ( /* already initialized */ ;
+           i < h1->length() && i < h2->length() && (*h1)[i] == (*h2)[i];
+           i++)
+      { /* taken care of in loop */ }
+      if (i >= h1->length())
+      {
+        if (i >= h2->length())
+        {
+          int i = 1;
+          while (i <= n && p_GetExp(a.getPP(),i,Rx) == p_GetExp(b.getPP(),i,Rx))
+            ++i;
+          if (i == n)
+            result = false;
+          else
+            result = p_GetExp(a.getPP(), i, Rx) < p_GetExp(b.getPP(), i, Rx);
+        }
+        else
+          result = true;
+      }
+      else
+      {
+        if (i > h2->length())
+          result = false;
+        else
+          result = (*h1)[i] < (*h2)[i];
+      }
+      if (h1 != NULL) delete h1;
+      if (h2 != NULL) delete h2;
+    }
+  }
+  return result;
+};
+
+bool LessByDegreeThenGradHilbert(PPWithIdeal &a, PPWithIdeal &b)
 {
   bool result;
   ring Rx = currRing;
@@ -492,6 +603,8 @@ void SelectMonomial(
     case ORD_HILBERT_THEN_LEX: possibleIdealsBasic.sort(LessByHilbert); break;
     case ORD_HILBERT_THEN_DEG: possibleIdealsBasic.sort(LessByHilbertThenDegree); break;
     case DEG_THEN_ORD_HILBERT: possibleIdealsBasic.sort(LessByDegreeThenHilbert); break;
+    case GRAD_HILB_THEN_DEG:   possibleIdealsBasic.sort(LessByGradHilbertThenDegree); break;
+    case DEG_THEN_GRAD_HILB:   possibleIdealsBasic.sort(LessByDegreeThenGradHilbert); break;
     default: possibleIdealsBasic.sort(LessByHilbert);
   }
   /*cout << "sorted list\n";
