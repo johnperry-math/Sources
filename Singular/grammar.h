@@ -169,7 +169,8 @@
      SYSVAR = 386,
      UMINUS = 387,
      HPOLY_CMD = 388,
-     DSTD_CMD = 389
+     DSTD_CMD = 389,
+     RING_OF_QRING_CMD = 390
    };
 #endif
 

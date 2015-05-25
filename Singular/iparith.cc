@@ -5003,6 +5003,14 @@ static BOOLEAN jjDSTD(leftv res, leftv u, leftv v)
   rChangeCurrRing(old_ring);
   return FALSE;
 }
+static BOOLEAN jjRINGOFQRING(leftv res, leftv v)
+{
+  ring Q = (ring)v->Data();
+  ring R = rCopy0(Q, false, true);
+  rComplete(R);
+  res->data = (char *)R;
+  return FALSE;
+}
 static BOOLEAN jjSort_Id(leftv res, leftv v)
 {
   res->data = (char *)idSort((ideal)v->Data());

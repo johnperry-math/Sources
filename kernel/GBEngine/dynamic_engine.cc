@@ -84,7 +84,11 @@ void PPWithIdeal::computeNumberNewPairs()
       if (!has_divisor)
       {
         int new_deg = 0;
-        for (int k=1; k <= n; ++k) new_deg += (pGetExp(t,k) > pGetExp(strat->S[i],k)) ? pGetExp(t,k) : pGetExp(strat->S[i],k);
+        //for (int k=1; k <= n; ++k) new_deg += (pGetExp(t,k) > pGetExp(strat->S[i],k)) ? pGetExp(t,k) : pGetExp(strat->S[i],k);
+        for (int k=1; k <= n; ++k)
+          new_deg += Rx->wvhdl[0][k] *
+            ((pGetExp(t,k) > pGetExp(strat->S[i],k)) ?
+                pGetExp(t,k) : pGetExp(strat->S[i],k));
         if (min_deg == 0 || min_deg > new_deg)
         {
           min_deg = new_deg; num_new_pairs = 1;

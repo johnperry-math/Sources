@@ -278,6 +278,7 @@ struct sValCmd1 dArith1[]=
 ,{D(loNewtonP),    NEWTONPOLY_CMD,  IDEAL_CMD,      IDEAL_CMD     , ALLOW_PLURAL |ALLOW_RING}
 ,{D(jjWAIT1ST1),   WAIT1ST_CMD,     INT_CMD,        LIST_CMD      , ALLOW_PLURAL |ALLOW_RING}
 ,{D(jjWAITALL1),   WAITALL_CMD,     INT_CMD,        LIST_CMD      , ALLOW_PLURAL |ALLOW_RING}
+,{D(jjRINGOFQRING), RING_OF_QRING_CMD, RING_CMD,    QRING_CMD     , ALLOW_RING}
 ,{NULL_VAL,        0,               0,              0             , NO_PLURAL |NO_RING}
 };
 /*=================== operations with 2 arg.: table =================*/
@@ -1048,6 +1049,7 @@ cmdnames cmds[] =
   { "RETURN",      0, END_GRAMMAR ,       RETURN},
   { "ring",        0, RING_CMD ,          RING_CMD},
   { "ringlist",    0, RINGLIST_CMD ,      CMD_1},
+  { "ringofqring", 0, RING_OF_QRING_CMD , CMD_1},
   { "rvar",        0, IS_RINGVAR ,        CMD_1},
   { "sba",         0, SBA_CMD ,           CMD_123},
   { "setring",     0, SETRING_CMD ,       SETRING_CMD},
