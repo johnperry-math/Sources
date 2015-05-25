@@ -1817,7 +1817,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
         //SelectMonomial(strat->P.p, CurrentLPPs, strat->S, strat->sl, skel, ORD_HILBERT_THEN_LEX);
         bool ordering_changed = false;
         SelectMonomial(strat->P.p, CurrentLPPs, strat->S, strat->sl, skel,
-                       ordering_changed, (DynamicHeuristic )dynamic_method);
+                       ordering_changed, strat, (DynamicHeuristic )dynamic_method);
         if (ordering_changed) // no need to incur this penalty if nothing changed
         {
           //cout << "selected\n";

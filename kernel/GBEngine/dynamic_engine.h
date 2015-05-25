@@ -64,8 +64,8 @@ poly HilbertPolynomial(intvec *, int);
 class PPWithIdeal
 {
   public:
-    PPWithIdeal(poly u, vector<poly> F, ray w)
-    : t(p_Copy_noCheck(u,currRing)), ordering(w)
+    PPWithIdeal(poly u, vector<poly> F, ray & w, skStrategy * strat)
+    : t(p_Copy_noCheck(u,currRing)), ordering(w), strat(strat), num_new_pairs(-1)
     {
       I = idInit(F.size() + 1);
       for (unsigned long i = 0; i < F.size(); ++i) { I->m[i] = F[i]; }
@@ -93,8 +93,12 @@ class PPWithIdeal
         return hPol = HilbertPolynomial(hSecondSeries(getHilbertNumerator()),
                                                       scDimInt(I));
     };
+    inline const int howManyNewPairs() { return num_new_pairs; }
+    inline const int degOfNewPairs() { return min_deg; }
+    void computeNumberNewPairs();
   protected:
-    poly t; ideal I; ray ordering; intvec * hNum; poly hPol;
+    poly t; ideal I; ray ordering; intvec * hNum; poly hPol; skStrategy *strat;
+    int num_new_pairs, min_deg;
 };
 
 /**
@@ -111,7 +115,7 @@ void compatiblePP(
   const set<poly> &allPPs,    // the monomials to consider;
                               // some will be removed
   const set<ray> &bndrys,     // known boundary vectors
-  set<poly> &result           // returned as PPs for Hilbert function
+  set<poly> &result          // returned as PPs for Hilbert function
                               // ("easy" (& efficient?) to extract exps
 );
 
@@ -156,6 +160,7 @@ void SelectMonomial(
     int numPolys,
     skeleton & currSkel,                // possibly changes
     bool &ordering_changed,
+    skStrategy * strat,
     DynamicHeuristic method = ORD_HILBERT_THEN_DEG
 );
 

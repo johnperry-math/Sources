@@ -60,6 +60,108 @@ bool LessByHilbert (PPWithIdeal &a, PPWithIdeal &b)
   return result;
 };
 
+void PPWithIdeal::computeNumberNewPairs()
+{
+  ring Rx = currRing;
+  int n = Rx->N;
+  num_new_pairs = min_deg = 0;
+  //cout << "surviving pairs for"; pWrite(t);
+  for (int i=0; i < strat->sl + 1; ++i)
+  {
+    // if gcd(t,Si) == 1 then do not count i
+    if (!pHasNotCF(t,strat->S[i]))
+    {
+      bool has_divisor = false;
+      for (int j=0; (!has_divisor) && j < i; ++j)
+      {
+        // if some j satisfies lcm(t,Sj) | lcm(t,Si) then do not count i
+        has_divisor = true;
+        for (int k=1; has_divisor && k <= n; ++k)
+          if (((pGetExp(t,k) > pGetExp(strat->S[i],k)) ? pGetExp(t,k) : pGetExp(strat->S[i],k))
+              < ((pGetExp(t,k) > pGetExp(strat->S[j],k)) ? pGetExp(t,k) : pGetExp(strat->S[j],k)))
+            has_divisor = false;
+      }
+      if (!has_divisor)
+      {
+        int new_deg = 0;
+        for (int k=1; k <= n; ++k) new_deg += (pGetExp(t,k) > pGetExp(strat->S[i],k)) ? pGetExp(t,k) : pGetExp(strat->S[i],k);
+        if (min_deg == 0 || min_deg > new_deg)
+        {
+          min_deg = new_deg; num_new_pairs = 1;
+        }
+        else if (min_deg == new_deg)
+        {
+          ++num_new_pairs;
+          //cout << '\t'; pWrite(pHead(strat->S[i]));
+        }
+      }
+    }
+  }
+  cout << "we get " << num_new_pairs << " from "; pWrite(t);
+  for (int i=0; i < strat->Ll + 1; ++i)
+  {
+    poly u = (strat->L[i].lcm == NULL) ? strat->L[i].p : strat->L[i].lcm;
+    int new_deg = 0;
+    for (int k=1; k <= n; ++k) new_deg += pGetExp(u,k);
+    if (min_deg == 0 || new_deg <= min_deg)
+    {
+      bool has_divisor = false;
+      for (int j=0; (!has_divisor) && j < strat->sl; ++j)
+      {
+        has_divisor = true;
+        for (int k=1; has_divisor && k <= n; ++k)
+          if (pGetExp(u,k) <
+              ((pGetExp(t,k) > pGetExp(strat->S[j],k)) ? pGetExp(t,k) : pGetExp(strat->S[j],k)))
+            has_divisor = false;
+      }
+      if (!has_divisor)
+      {
+        if (min_deg == 0 || min_deg > new_deg)
+        {
+          min_deg = new_deg; num_new_pairs = 1;
+        }
+        else if (min_deg == new_deg)
+        {
+          ++num_new_pairs;
+          //cout << '\t'; pWrite(u);
+        }
+      }
+    }
+  }
+  cout << " which makes " << num_new_pairs << " pairs total at degree " << min_deg << ".\n";
+}
+
+bool LessByNumCritPairs (PPWithIdeal &a, PPWithIdeal &b)
+{
+  bool result;
+  ring Rx = currRing;
+  int n = Rx->N;
+  // first check if the number of critical pairs has been computed
+  if (a.howManyNewPairs() < 0) a.computeNumberNewPairs();
+  if (b.howManyNewPairs() < 0) b.computeNumberNewPairs();
+  if (a.degOfNewPairs() < b.degOfNewPairs())
+    return true;
+  else if (a.degOfNewPairs() > b.degOfNewPairs())
+    return false;
+  // at this point, the degrees of the new pairs will be equal
+  else if (a.howManyNewPairs() > b.howManyNewPairs())
+    result = true;
+  else if (a.howManyNewPairs() < b.howManyNewPairs())
+    result = false;
+  else
+  { // the numerators are equal; break tie via lex
+    int i = 1;
+    while (i <= n && p_GetExp(a.getPP(),i,Rx) == p_GetExp(b.getPP(),i,Rx))
+      ++i;
+    if (i == n)
+      result = false;
+    else
+      result = p_GetExp(a.getPP(), i, Rx) > p_GetExp(b.getPP(), i, Rx);
+  }
+  //cout << "\tfirst less than second? " << result << endl;
+  return result;
+};
+
 bool LessByHilbertThenDegree(PPWithIdeal &a, PPWithIdeal &b)
 {
   bool result;
@@ -354,9 +456,9 @@ void compatiblePP(
   const set<poly> &allPPs,    // the monomials to consider;
                                       // some will be removed
   const set<ray> &bndrys,     // known boundary vectors
-  set<poly> &result,           // returned as PPs for Hilbert function
+  set<poly> &result,          // returned as PPs for Hilbert function
                                       // ("easy" (& efficient?) to extract exps
-  set<poly> &boundary_mons   // boundary monomials
+  set<poly> &boundary_mons    // boundary monomials
 )
 {
   // get the exponent vector of the current LPP, insert it
@@ -555,6 +657,7 @@ void SelectMonomial(
     int numPolys,
     skeleton & currSkel,                // possibly changes
     bool &ordering_changed,
+    skStrategy * strat,
     DynamicHeuristic method
 )
 {
@@ -595,7 +698,7 @@ void SelectMonomial(
        ++piter
       )
   {
-    PPWithIdeal newIdeal(*piter, CurrentLPPs, w);
+    PPWithIdeal newIdeal(*piter, CurrentLPPs, w, strat);
     possibleIdealsBasic.push_back(newIdeal);
   }
   switch(method)
@@ -605,6 +708,7 @@ void SelectMonomial(
     case DEG_THEN_ORD_HILBERT: possibleIdealsBasic.sort(LessByDegreeThenHilbert); break;
     case GRAD_HILB_THEN_DEG:   possibleIdealsBasic.sort(LessByGradHilbertThenDegree); break;
     case DEG_THEN_GRAD_HILB:   possibleIdealsBasic.sort(LessByDegreeThenGradHilbert); break;
+    case MIN_CRIT_PAIRS:       possibleIdealsBasic.sort(LessByNumCritPairs); break;
     default: possibleIdealsBasic.sort(LessByHilbert);
   }
   /*cout << "sorted list\n";
@@ -667,8 +771,8 @@ void SelectMonomial(
   for (int i = 0; i < (int )(new_weight.get_dimension()); ++i)
     ordering_changed = ordering_changed or ((int )new_weight[i]) != Rx->wvhdl[0][i];
   cout << "ordering changed? " << ordering_changed << endl;
-  /*cout << "finished with ";
-  for (unsigned long i = 0; i < CurrentLPPs.size(); ++i) pWrite(CurrentLPPs[i]);
+  cout << "finished with "; pWrite(t);
+  /*for (unsigned long i = 0; i < CurrentLPPs.size(); ++i) pWrite(CurrentLPPs[i]);
   cout << endl;
   cout << "skeleton after:\n";
   cout << currSkel; */
