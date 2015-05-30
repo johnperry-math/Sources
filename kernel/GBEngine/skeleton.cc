@@ -13,7 +13,7 @@
 #include <cstdlib>
 #include "skeleton.h"
 
-constraint::constraint(ulong num_variables, const long coeffs [])
+constraint::constraint(ulong num_variables, long coeffs [])
 {
   nvars = num_variables;
   coefficients = new long[nvars];
@@ -21,7 +21,7 @@ constraint::constraint(ulong num_variables, const long coeffs [])
     coefficients[i] = coeffs[i];
 }
 
-constraint::constraint(const vector<long> &coeffs)
+constraint::constraint(vector<long> &coeffs)
 {
   nvars = coeffs.size();
   coefficients = new long[nvars];
@@ -58,6 +58,15 @@ bool operator == (const constraint &first, const constraint &second)
     if (first[i] != second[i])
       result = false;
   return result;
+}
+
+bool operator != (constraint &first, constraint &second)
+{
+  bool result = true;
+  for (ulong i = 0; result and i < first.get_number_of_variables(); ++i)
+    if (first[i] != second[i])
+      result = false;
+  return !result;
 }
 
 // formatted as sum of products of coefficients and variables
@@ -115,7 +124,7 @@ ray::ray(ulong dimension, long direction)
   delete [] coeffs;
 }
 
-ray::ray(ulong dimension, const ulonglong entries [])
+ray::ray(ulong dimension, ulonglong entries [])
 {
   dim = dimension;
   coords = new ulonglong[dim];
@@ -123,7 +132,7 @@ ray::ray(ulong dimension, const ulonglong entries [])
     coords[i] = entries[i];
 }
 
-ray::ray(const vector<ulonglong> &entries)
+ray::ray(vector<ulonglong> &entries)
 {
   dim = entries.size();
   coords = new ulonglong[dim];
@@ -175,7 +184,7 @@ long long ray::obtain_dot_product(const constraint &hyperplane) const
 {
   long long result = 0;
   for (ulong i = 0; i < dim; ++i)
-    result += coords[i] * hyperplane[i];
+    result += coords[i] * (const_cast<constraint &>(hyperplane))[i];
   return result;
 }
 
@@ -189,9 +198,9 @@ bool ray::add_active_constraint(const constraint & hyperplane, bool verify)
   return can_add;
 }
 
-void ray::find_and_add_active_constraints(const vector<constraint> &old_constraints)
+void ray::find_and_add_active_constraints(vector<constraint> &old_constraints)
 {
-  for (vector<const constraint>::iterator citer = old_constraints.begin();
+  for (vector<constraint>::iterator citer = old_constraints.begin();
        citer != old_constraints.end();
        ++citer
       )
@@ -199,7 +208,7 @@ void ray::find_and_add_active_constraints(const vector<constraint> &old_constrai
       add_active_constraint(*citer);
 }
 
-ray operator*(ulonglong a, const ray &r)
+ray operator*(ulonglong a, ray &r)
 {
   ulong d = r.get_dimension();
   ulonglong *coords = new ulonglong[d];
@@ -218,7 +227,7 @@ ulonglong operator*(const ray &r1, const ray &r2)
   return result;
 }
 
-ulonglong operator*(const ray &r1, vector<long> &r2)
+ulonglong operator*(ray &r1, vector<long> &r2)
 {
   ulonglong result = 0;
   for (ulong i = 0; i < r1.get_dimension(); ++i)
@@ -226,7 +235,7 @@ ulonglong operator*(const ray &r1, vector<long> &r2)
   return result;
 }
 
-ulonglong operator*( vector<long> &r1, const ray &r2)
+ulonglong operator*( vector<long> &r1, ray &r2)
 {
   ulonglong result = 0;
   for (ulong i = 0; i < r1.size(); ++i)
@@ -234,7 +243,7 @@ ulonglong operator*( vector<long> &r1, const ray &r2)
   return result;
 }
 
-ray operator+(const ray &r1, const ray &r2)
+ray operator+(ray &r1, ray &r2)
 {
   ulong d = r1.get_dimension();
   ulonglong *coords = new ulonglong[d];
@@ -285,6 +294,14 @@ bool operator==(const ray &r1, const ray &r2)
   for (int ulong i = 0; result and i < r1.get_dimension(); ++i)
     result = r1[i] == r2[i];
   return result;
+}
+
+bool operator!=(const ray &r1, const ray &r2)
+{
+  bool result = true;
+  for (int ulong i = 0; result and i < r1.get_dimension(); ++i)
+    result = r1[i] == r2[i];
+  return !result;
 }
 
 ostream & operator<<(ostream & ostr, const ray &r)
@@ -387,7 +404,7 @@ bool operator < (const edge &first, const edge &second)
   return result;
 }
 
-edge & edge::operator=(const edge &other)
+edge & edge::operator=(edge &other)
 {
   if (!(*this == other))
   {
@@ -438,14 +455,14 @@ skeleton::skeleton(ulong dimension)
   common_initialization(dimension);
 }
 
-skeleton::skeleton(ulong dimension, const vector<constraint> &constraints)
+skeleton::skeleton(ulong dimension, vector<constraint> &constraints)
         //: skeleton(dimension)
 {
   common_initialization(dimension);
   ddm(constraints);
 }
 
-skeleton::skeleton(const skeleton &old_skeleton)
+skeleton::skeleton(skeleton &old_skeleton)
         : constraints(old_skeleton.constraints), rays(old_skeleton.rays),
           edges(old_skeleton.edges), dim(old_skeleton.dim)
           
@@ -459,7 +476,7 @@ skeleton::~skeleton()
 {
 }
 
-bool skeleton::ddm(const constraint &constraint)
+bool skeleton::ddm(constraint &constraint)
 {
   // cout << "processing constraint " << constraint << endl;
   // innocent until proven guilty
@@ -574,14 +591,14 @@ bool skeleton::ddm(const constraint &constraint)
   return consistent;
 }
 
-bool skeleton::ddm(const vector<constraint> &new_constraints)
+bool skeleton::ddm(vector<constraint> &new_constraints)
 {
   // innocent until proven guilty
   bool consistent = true;
   //cout << "adding " << new_constraints.size() << "constraints\n";
   // process each constraint sequentially
   for (
-        vector<const constraint>::iterator nciter = new_constraints.begin();
+        vector<constraint>::iterator nciter = new_constraints.begin();
         consistent and nciter != new_constraints.end();
         ++nciter
       )
@@ -594,7 +611,7 @@ bool skeleton::ddm(const vector<constraint> &new_constraints)
 }
 
 int number_of_common_constraints(
-    const set<constraint> &a, const set<constraint> &b
+    set<constraint> &a, set<constraint> &b
 )
 {
   int result = 0;
@@ -608,7 +625,7 @@ int number_of_common_constraints(
 }
 
 set<constraint> intersections_of_active_constraints(
-    const set<constraint> &a, const set<constraint> &b
+    set<constraint> &a, set<constraint> &b
 )
 {
   // highly unoptimized, but off the top of my head i don't know how to do better
@@ -620,7 +637,7 @@ set<constraint> intersections_of_active_constraints(
 }
 
 bool is_first_subset_of_second(
-    const set<constraint> & a, const set<constraint> & b
+    set<constraint> & a, set<constraint> & b
 )
 {
   // highly unoptimized, but off the top of my head i don't know how to do better
@@ -661,7 +678,7 @@ set<edge> skeleton::adjacencies_by_graphs(set<ray> new_rays)
   {
     ray u = *riter;
     tested_rays.insert(u);
-    const set<constraint> * zero_u = u.get_known_active_constraints();
+    set<constraint> * zero_u = u.get_known_active_constraints();
     // D's rays have at least dim - 2 active constraints in common with u
     // (see Proposition 3 in Zolotych's paper)
     set<ray> D;
@@ -669,7 +686,7 @@ set<edge> skeleton::adjacencies_by_graphs(set<ray> new_rays)
       if (*riter != *siter)
       {
         ray v = *siter;
-        const set<constraint> * zero_v = v.get_known_active_constraints();
+        set<constraint> * zero_v = v.get_known_active_constraints();
         //cout << "checking constraints of " << u << " against " << v  << " for " << dim << endl;
         if (number_of_common_constraints(*zero_u, *zero_v) >= dim - 2)
         {
@@ -687,7 +704,7 @@ set<edge> skeleton::adjacencies_by_graphs(set<ray> new_rays)
       ray v = *diter;
       if (tested_rays.find(v) == tested_rays.end()) // avoid doubling edges
       {
-        const set<constraint> * zero_v = v.get_known_active_constraints();
+        set<constraint> * zero_v = v.get_known_active_constraints();
         // WARNING: I have commented out the following line, because it seems
         // unnecessary: v is in D iff the size of the intersection is at least
         // dim - 2. If there are unexpected bugs, this commenting should be
@@ -728,7 +745,7 @@ ostream & operator << (ostream & ostr, const skeleton &skel)
   // header, start constraints
   ostr << "Skeleton defined by constraints" << endl;
   for (
-       vector<const constraint>::iterator citer=skel.constraints.begin();
+       vector<constraint>::const_iterator citer=skel.constraints.begin();
        citer != skel.constraints.end();
        ++citer
       )
@@ -746,7 +763,7 @@ ostream & operator << (ostream & ostr, const skeleton &skel)
   return ostr;
 }
 
-skeleton & skeleton::operator=(const skeleton & other)
+skeleton & skeleton::operator=(skeleton & other)
 {
   rays.clear();
   edges.clear();
@@ -765,7 +782,7 @@ skeleton & skeleton::operator=(const skeleton & other)
       )
     edges.insert(*eiter);
   for (
-        vector<const constraint>::iterator citer = other.constraints.begin();
+        vector<constraint>::iterator citer = other.constraints.begin();
         citer != other.constraints.end();
         ++citer
       )

@@ -1734,12 +1734,12 @@ void enterOnePairNormal (int i,poly p,int ecart, int isFromQ,kStrategy strat, in
     {
       long d1=0, d2=0;
       // first get sugar of multiples
-      for (int i = 1; i <= currRing->N; ++i)
+      for (int k = 1; k <= currRing->N; ++k)
       {
         /*d1 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p1,i, currRing))*p_Weight(i, currRing);
         d2 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p2,i, currRing))*p_Weight(i, currRing);*/
-        d1 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p1,i, currRing));
-        d2 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p2,i, currRing));
+        d1 += (p_GetExp(Lp.lcm,k, currRing) - p_GetExp(Lp.p1,k, currRing));
+        d2 += (p_GetExp(Lp.lcm,k, currRing) - p_GetExp(Lp.p2,k, currRing));
       }
       // now determine sugar of spoly
       /*long duf1 = d1 + p_WDegree(Lp.p1, currRing);
@@ -2964,12 +2964,12 @@ void initenterpairsDynamic(poly h,int k,int ecart,int isFromQ,kStrategy strat, i
       // determine sugar
       long d1=0, d2=0;
       // first get sugar of multiples
-      for (int i = 1; i <= currRing->N; ++i)
+      for (int k = 1; k <= currRing->N; ++k)
       {
         /*d1 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p1,i, currRing))*p_Weight(i, currRing);
         d2 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p2,i, currRing))*p_Weight(i, currRing);*/
-        d1 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p1,i, currRing));
-        d2 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p2,i, currRing));
+        d1 += (p_GetExp(Lp.lcm,k, currRing) - p_GetExp(Lp.p1,k, currRing));
+        d2 += (p_GetExp(Lp.lcm,k, currRing) - p_GetExp(Lp.p2,k, currRing));
       }
       // now determine sugar of spoly
       /*long duf1 = d1 + p_WDegree(Lp.p1, currRing);

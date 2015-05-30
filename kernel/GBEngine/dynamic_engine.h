@@ -80,7 +80,7 @@ class PPWithIdeal
     ~PPWithIdeal() { /*idDelete(&I, currRing);*/ }
     inline poly getPP() const { return t; };
     inline ideal getIdeal() const { return I; };
-    inline ray getOrdering() const { return ordering; };
+    inline ray getOrdering() { return ordering; };
     inline intvec * getHilbertNumerator(intvec *grading = NULL)
     {
       if (hNum != NULL) return hNum;

@@ -44,7 +44,7 @@ public:
     \param coeffs copies this array of coefficients
     \pre the size of the array needs to be at least as long as the dimension!
   */
-  constraint(ulong, const long []);
+  constraint(ulong, long []);
 
   /**
     Initialize constraint to the given coefficients.
@@ -53,7 +53,7 @@ public:
     \param coeffs copies thiis vector of coefficients
     \post \c nvars will have the value equal to `coeffs.size()`
   */
-  constraint(const vector<long> &);
+  constraint(vector<long> &);
 
   /**
     Copies the coefficients of the other constraint,
@@ -93,12 +93,13 @@ public:
       It does not check, since the assumption is that you know what you're doing.
   */
   friend bool operator==(const constraint &a, const constraint &b);
+  friend bool operator!=(const constraint &a, const constraint &b);
 
   /**
     \warning This is unsafe when number of variables is not the same.
       It does not check, since the assumption is that you know what you're doing.
   */
-  friend bool operator!=(const constraint &a, const constraint &b);
+  friend bool operator!=(constraint &a, constraint &b);
 
   // I/O
 
@@ -158,14 +159,14 @@ public:
     \pre the size of the array needs to be at least as long
       as the number of variables!
   */
-  ray(ulong, const ulonglong []);
+  ray(ulong, ulonglong []);
 
   /**
     Creates a ray whose coordinates are given by the vector.
     \post The dimension of this ray will equal the number of entries in the vector,
       and the values of their entries will be equal.
   */
-  ray(const vector<ulonglong> &);
+  ray(vector<ulonglong> &);
 
   /**
     Copies the coordinates of the other ray.
@@ -195,16 +196,17 @@ public:
       It does not check, since the assumption is that you know what you're doing.
   */
   friend bool operator==(const ray &, const ray &);
+  friend bool operator!=(const ray &, const ray &);
 
   /**
     Indicates whether the two rays are unequal.
     \warning This is unsafe when number of variables is not the same.
       It does not check, since the assumption is that you know what you're doing.
   */
-  inline friend bool operator!=(const ray &r, const ray &s) { return !(r==s); }
+  inline friend bool operator!=(ray &r, ray &s) { return !(r==s); }
 
   /** Synonym for []. I have no idea why I added this. */
-  inline ulonglong coordinate(ulong index) const { return coords[index]; };
+  inline ulonglong coordinate(ulong index) { return coords[index]; };
 
   /**
     Returns `true` if and only if the hyperplane is active at this ray.
@@ -212,7 +214,7 @@ public:
     \f$ \mathbf c \f$ and the ray is defined by \f$ \mathbf r \f$ ,
     this function returns true if and only if \f$ c\cdot r = 0 \f$.
   */
-  inline bool is_active_at(const constraint &hyperplane) const
+  inline bool is_active_at(const constraint &hyperplane)
   {
     return 0 == obtain_dot_product(hyperplane);
   };
@@ -223,7 +225,7 @@ public:
     \f$ \mathbf c \f$ and the ray is defined by \f$ \mathbf r \f$ ,
     this function returns true if and only if \f$ c\cdot r > 0 \f$.
   */
-  inline bool is_above(const constraint &hyperplane) const
+  inline bool is_above(constraint &hyperplane)
   {
     return 0 < obtain_dot_product(hyperplane);
   };
@@ -234,7 +236,7 @@ public:
     \f$ \mathbf c \f$ and the ray is defined by \f$ \mathbf r \f$ ,
     this function returns true if and only if \f$ c\cdot r < 0 \f$.
   */
-  inline bool is_below(const constraint &hyperplane) const
+  inline bool is_below(constraint &hyperplane)
   {
     return 0 > obtain_dot_product(hyperplane);
   };
@@ -276,10 +278,10 @@ public:
       as the number of variables.
       It does not check, since the assumption is that you know what you're doing.
   */
-  void find_and_add_active_constraints(const vector<constraint> &);
+  void find_and_add_active_constraints(vector<constraint> &);
 
   /** Returns the list of known active constraints. */
-  inline const set<constraint> * get_known_active_constraints() const
+  inline set<constraint> * get_known_active_constraints()
   { return & known_active_constraints; };
 
   /**
@@ -333,7 +335,7 @@ private:
   \warning This is unsafe when dimension is not the same.
     It does not check, since the assumption is that you know what you're doing.
 */
-ray operator*(ulonglong, const ray &);
+ray operator*(ulonglong, ray &);
 
 /**
   \ingroup RayArithmetic
@@ -341,7 +343,7 @@ ray operator*(ulonglong, const ray &);
   \warning This is unsafe when dimension is not the same.
     It does not check, since the assumption is that you know what you're doing.
 */
-ray operator+(const ray &, const ray &);
+ray operator+(ray &, ray &);
 
 /**
   \ingroup RayArithmetic
@@ -382,7 +384,7 @@ inline long long operator*(const ray &r, const constraint &c)
   \warning This is unsafe when dimension is not the same.
     It does not check, since the assumption is that you know what you're doing.
 */
-inline long long operator*(const constraint &c, const ray &r)
+inline long long operator*(constraint &c, ray &r)
 { return r.obtain_dot_product(c); }
 
 /**@}*/
@@ -425,10 +427,10 @@ public:
   // access
 
   /** Returns the first ray listed in this edge. */
-  inline ray get_first_ray() const { return first; };
+  inline ray get_first_ray() { return first; };
 
   /** Returns the second ray listed in this edge. */
-  inline ray get_second_ray() const { return second; };
+  inline ray get_second_ray() { return second; };
 
   /**
     Compares two edges lexicographically.
@@ -447,7 +449,7 @@ public:
   friend ostream & operator<<(ostream &, const edge &);
 
   /** Assignment operator */
-  edge & operator=(const edge &);
+  edge & operator=(edge &);
 
   /**
     Equal if and only if the first and second rays are true.
@@ -475,7 +477,7 @@ private:
   Returns the number of constraints common to both sets.
 */
 int number_of_common_constraints(
-    const set<constraint> &, const set<constraint> &
+    set<constraint> &, set<constraint> &
 );
 
 
@@ -484,7 +486,7 @@ int number_of_common_constraints(
   Returns the intersection between the given sets of constraints.
 */
 set<constraint> intersections_of_active_constraints(
-      const set<constraint> &, const set<constraint> &
+      set<constraint> &, set<constraint> &
   );
 
 /**
@@ -492,7 +494,7 @@ set<constraint> intersections_of_active_constraints(
   Returns `true` if and only if the first set is a subset of the second.
 */
 bool is_first_subset_of_second(
-      const set<constraint> &, const set<constraint> &
+      set<constraint> &, set<constraint> &
   );
 
 /**
@@ -559,10 +561,10 @@ public:
         corresponding polyhedral cone
     \warning Your program will almost certainly fail if you do not respect the precondition.
   */
-  skeleton(ulong, const vector<constraint> &);
+  skeleton(ulong, vector<constraint> &);
 
   /** Performs a deep copy of `other`. */
-  skeleton(const skeleton &);
+  skeleton(skeleton &);
 
   // destruction
 
@@ -577,25 +579,25 @@ public:
   inline ulong get_dimension() const { return dim; };
 
   /** Returns the number of rays defining the skeleton. */
-  inline ulong get_number_of_rays() const { return rays.size(); };
+  inline ulong get_number_of_rays() { return rays.size(); };
 
   /** Returns the rays that define the skeleton. */
-  inline set<ray> get_rays() const { return rays; };
+  inline const set<ray> & get_rays() { return rays; };
 
   /** Returns the number of edges defining the skeleton. */
-  inline ulong get_number_of_edges() const { return edges.size(); };
+  inline ulong get_number_of_edges() { return edges.size(); };
 
   /** Returns the edges that define the skeleton. */
-  inline set<edge> get_edges() const { return edges; };
+  inline set<edge> get_edges() { return edges; };
 
   /** Returns the number of constraints defining the skeleton. */
-  inline ulong get_number_of_constraints() const { return constraints.size(); };
+  inline ulong get_number_of_constraints() { return constraints.size(); };
 
   /** Returns the constraints that define the skeleton. */
-  inline vector<constraint> get_constraints() const { return constraints; };
+  inline const vector<constraint> & get_constraints() { return constraints; };
 
   /** Returns the indicated constraint. Numbering starts at 0. */
-  inline constraint get_constraint(int index) const { return constraints[index]; };
+  inline constraint get_constraint(int index) { return constraints[index]; };
 
   /** prints out the constraints, then the rays, then the edges. */
   friend ostream & operator<<(ostream &, const skeleton &);
@@ -617,7 +619,7 @@ public:
       Accept the new constraints only if that copy succeeds,
       in which case, you might as well discard the original, and keep the copy.
   */
-  bool ddm(const vector<constraint> &);
+  bool ddm(vector<constraint> &);
 
   /**
     Adds the indicated constraint (singular!) and re-computes the skeleton.
@@ -634,7 +636,7 @@ public:
       Accept the new constraints only if that copy succeeds,
       in which case, you might as well discard the original, and keep the copy.
   */
-  bool ddm(const constraint &);
+  bool ddm(constraint &);
 
   /**
     Re-computes the edges in the skeleton using Zolotych's `GraphAdj` algorithm
@@ -645,7 +647,7 @@ public:
   /**
     Assignment operator; empties current set & copies from other.
   */
-  skeleton & operator=(const skeleton &);
+  skeleton & operator=(skeleton &);
 
 private:
 
