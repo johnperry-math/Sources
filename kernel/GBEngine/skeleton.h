@@ -449,7 +449,7 @@ public:
   friend ostream & operator<<(ostream &, const edge &);
 
   /** Assignment operator */
-  edge & operator=(edge &);
+  edge & operator=(const edge &);
 
   /**
     Equal if and only if the first and second rays are true.
@@ -647,7 +647,7 @@ public:
   /**
     Assignment operator; empties current set & copies from other.
   */
-  skeleton & operator=(skeleton &);
+  skeleton & operator=(const skeleton &);
 
 private:
 

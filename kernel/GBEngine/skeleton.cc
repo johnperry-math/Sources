@@ -404,7 +404,7 @@ bool operator < (const edge &first, const edge &second)
   return result;
 }
 
-edge & edge::operator=(edge &other)
+edge & edge::operator=(const edge &other)
 {
   if (!(*this == other))
   {
@@ -763,7 +763,7 @@ ostream & operator << (ostream & ostr, const skeleton &skel)
   return ostr;
 }
 
-skeleton & skeleton::operator=(skeleton & other)
+skeleton & skeleton::operator=(const skeleton & other)
 {
   rays.clear();
   edges.clear();
@@ -782,7 +782,7 @@ skeleton & skeleton::operator=(skeleton & other)
       )
     edges.insert(*eiter);
   for (
-        vector<constraint>::iterator citer = other.constraints.begin();
+        vector<constraint>::const_iterator citer = other.constraints.begin();
         citer != other.constraints.end();
         ++citer
       )

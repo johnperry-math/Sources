@@ -4994,12 +4994,12 @@ static BOOLEAN jjDSTD(leftv res, leftv u, leftv v)
   currRing->qideal = basis;
   res->data = (char *)currRing;
   cout << "Result is qring whose ideal is the Gröbner basis. Use ideal(_); to extract.\n";
+  /*lists result = (lists )omAllocBin(slists_bin);
+  result->Init(2);
+  result->m[0].rtyp = RING_CMD;  result->m[0].data = (void *)currRing;
+  result->m[1].rtyp = IDEAL_CMD; result->m[1].data = (void *)basis;
+  res->data = (char *)result;*/
   cout << "Restoring original ring.\n";
-  //lists result = (lists )omAllocBin(slists_bin);
-  //result->Init(2);
-  //result->m[0].rtyp = RING_CMD;  result->m[0].data = (void *)currRing;
-  //result->m[1].rtyp = IDEAL_CMD; result->m[1].data = (void *)basis;
-  //res->data = (char *)result;
   rChangeCurrRing(old_ring);
   return FALSE;
 }
