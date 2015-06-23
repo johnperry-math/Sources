@@ -3,5 +3,5 @@ ideal i=t4zb+x3ya,
         tx8yz-ab4cde,
         xy2z2d+zc2e2,
         tx2y3z4+ab2c3e2;
-dstd(i,1);
+qring q = dstd(i,5);
 basering;

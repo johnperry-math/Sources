@@ -60,7 +60,7 @@ bool LessByHilbert (PPWithIdeal &a, PPWithIdeal &b)
   return result;
 };
 
-void PPWithIdeal::computeNumberNewPairs()
+/*void PPWithIdeal::computeNumberNewPairs()
 {
   ring Rx = currRing;
   int n = Rx->N;
@@ -84,11 +84,14 @@ void PPWithIdeal::computeNumberNewPairs()
       if (!has_divisor)
       {
         int new_deg = 0;
-        //for (int k=1; k <= n; ++k) new_deg += (pGetExp(t,k) > pGetExp(strat->S[i],k)) ? pGetExp(t,k) : pGetExp(strat->S[i],k);
         for (int k=1; k <= n; ++k)
-          new_deg += Rx->wvhdl[0][k] *
-            ((pGetExp(t,k) > pGetExp(strat->S[i],k)) ?
-                pGetExp(t,k) : pGetExp(strat->S[i],k));
+          new_deg += (pGetExp(t,k) > pGetExp(strat->S[i],k))
+            ? pGetExp(t,k)
+            : pGetExp(strat->S[i],k);
+        //for (int k=1; k <= n; ++k)
+        //  new_deg += Rx->wvhdl[0][k] *
+        //    ((pGetExp(t,k) > pGetExp(strat->S[i],k)) ?
+        //        pGetExp(t,k) : pGetExp(strat->S[i],k));
         if (min_deg == 0 || min_deg > new_deg)
         {
           min_deg = new_deg; num_new_pairs = 1;
@@ -128,6 +131,115 @@ void PPWithIdeal::computeNumberNewPairs()
         {
           ++num_new_pairs;
           //cout << '\t'; pWrite(u);
+        }
+      }
+    }
+  }
+  cout << " which makes " << num_new_pairs << " pairs total at degree " << min_deg << ".\n";
+}*/
+
+void PPWithIdeal::computeNumberNewPairs()
+{
+  ring Rx = currRing;
+  int n = Rx->N;
+  num_new_pairs = min_deg = 0;
+  bool * keepers = new bool [strat->sl+1];
+  for (int i = 0; i < strat->sl + 1; ++i) keepers[i] = true;
+  // first main loop: apply Buchberger's lcm criterion to new pairs
+  for (int i = 0; i < strat->sl + 1; ++i)
+  {
+    // if gcd(t,Si) == 1 then skip i for the time being
+    if (!pHasNotCF(t,strat->S[i]))
+    {
+      bool has_divisor = false;
+      for (int j=0; (!has_divisor) && j < strat->sl + 1; ++j)
+      {
+        if (i != j && keepers[j])
+        {
+          // if some j satisfies lcm(t,Sj) | lcm(t,Si) then do not count i
+          has_divisor = true;
+          for (int k=1; has_divisor && k <= n; ++k)
+            if // deg(lcm(t,lm(Si)))
+                (((pGetExp(t,k) > pGetExp(strat->S[i],k)) ?
+                  pGetExp(t,k) : pGetExp(strat->S[i],k))
+               < // deg(lcm(t,lm(Sj)))
+                ((pGetExp(t,k) > pGetExp(strat->S[j],k)) ?
+                  pGetExp(t,k) : pGetExp(strat->S[j],k)))
+              has_divisor = false;
+        }
+      }
+    }
+  }
+  // second main loop: apply Buchberger's gcd criterion to new pairs, count survivors
+  for (int i = 0; i < strat->sl + 1; ++i)
+  {
+    if (keepers[i] && !pHasNotCF(t,strat->S[i]))
+    {
+      int new_deg = 0;
+      // determine deg(lcm(t,Si))
+      for (int k=1; k <= n; ++k)
+        new_deg += (pGetExp(t,k) > pGetExp(strat->S[i],k))
+          ? pGetExp(t,k)
+          : pGetExp(strat->S[i],k);
+      /*for (int k=1; k <= n; ++k)
+        new_deg += Rx->wvhdl[0][k] *
+          ((pGetExp(t,k) > pGetExp(strat->S[i],k)) ?
+              pGetExp(t,k) : pGetExp(strat->S[i],k));*/
+      if (min_deg == 0 || min_deg > new_deg)
+      {
+        min_deg = new_deg; num_new_pairs = 1;
+      }
+      else if (min_deg == new_deg)
+      {
+        ++num_new_pairs;
+        //cout << '\t'; pWrite(pHead(strat->S[i]));
+      }
+    }
+  }
+  delete [] keepers;
+  cout << "we get " << num_new_pairs << " from "; pWrite(t);
+  // third main loop: apply Buchberger's lcm criterion to old pairs, UNLESS
+  // all three lcm's are equal
+  for (int i = 0; i < strat->Ll + 1; ++i)
+  {
+    if (strat->L[i].lcm != NULL)
+    {
+      poly u = strat->L[i].lcm;
+      int new_deg = 0;
+      for (int k=1; k <= n; ++k) new_deg += pGetExp(u,k);
+      // for (int k=1; k <= n; ++k) new_deg += pGetExp(u,k) * Rx->wvhdl[0][k];
+      // no point continuing if it wouldn't change min_deg
+      if (min_deg == 0 || new_deg <= min_deg)
+      {
+        // see if new poly divides this one
+        bool has_divisor = true;
+        // see if Buchberger triple has same lcm
+        bool all_equal = true;
+        poly p1 = strat->L[i].p1;
+        poly p2 = strat->L[i].p2;
+        for (int k=1; has_divisor && all_equal && k <= n; ++k)
+        {
+          if (pGetExp(t,k) > pGetExp(u,k)) has_divisor = false;
+          else
+          {
+            // check lcm(t,lm(p1)) == lcm(t,lm(p2)) == lcm(lm(p1),lm(p2)) in xk
+            int a = (pGetExp(t,k) > pGetExp(p1,k)) ? pGetExp(t,k) : pGetExp(p1,k);
+            int b = (pGetExp(t,k) > pGetExp(p2,k)) ? pGetExp(t,k) : pGetExp(p2,k);
+            int c = (pGetExp(p1,k) > pGetExp(p2,k)) ? pGetExp(p1,k) : pGetExp(p2,k);
+            all_equal = (a == c) && (b == c);
+          }
+        }
+        if (!has_divisor || all_equal)
+        {
+          if (min_deg == 0 || min_deg > new_deg)
+          {
+            min_deg = new_deg; num_new_pairs = 1;
+          }
+          else // the only reason we'd be here is if min_deg == new_deg
+          {
+            ++num_new_pairs;
+            //cout << '\t'; pWrite(u);
+          }
         }
       }
     }

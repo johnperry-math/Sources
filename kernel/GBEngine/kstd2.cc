@@ -1388,16 +1388,17 @@ ring new_dynamic_ring_from_old(ring oldR, ray *new_weight)
   Converts the elements of an ideal from an old ring to a new ring.
   This is necessary for the dynamic algorithm.
 */
-void convertIdeal(ideal I, ring oldRing, ring newRing)
+void convertIdeal(ideal & I, ring oldRing, ring newRing)
 {
-  if (I != NULL)
+  /*if (I != NULL)
     for (int i = 0; i < IDELEMS(I); ++i)
     {
       poly oldP = I->m[i];
       I->m[i] = prShallowCopyR(oldP, oldRing, newRing);
       p_Setm(I->m[i], newRing);
       p_ShallowDelete(&oldP, oldRing);
-    }
+    }*/
+  if (I != NULL) I = idrMoveR(I, oldRing, newRing);
 }
 
 /**
@@ -1457,7 +1458,7 @@ void convert_stratP(kStrategy &strat, ring oldR, ring newR)
 {
   poly oldP = strat->P.p;
   strat->P.p = prShallowCopyR(oldP, oldR, newR);
-  if (strat->tailBin != NULL) { omFree(strat->tailBin); strat->tailBin = NULL; }
+  //if (strat->tailBin != NULL) { omFree(strat->tailBin); strat->tailBin = NULL; }
   p_Setm(strat->P.p, newR);
   p_ShallowDelete(&oldP, oldR);
   strat->P.FDeg = strat->P.pFDeg();
@@ -1592,6 +1593,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
     // set up ring
     dynR = new_dynamic_ring_from_old(currRing, NULL);
     strat->tailRing = dynR;
+    strat->tailBin = dynR->PolyBin;
     strat->P.tailRing = dynR;
     // coerce from old to new
     ring oldR = currRing;
@@ -1705,6 +1707,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
     }
     /* picks the last element from the lazyset L */
     strat->P = strat->L[strat->Ll];
+    kTest_T(&(strat->P));
     cout << "picked element with sugar " << strat->P.weighted_sugar << endl;;
     strat->Ll--;
 
@@ -1775,6 +1778,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
     {
       // get the polynomial (canonicalize bucket, make sure P.p is set)
       strat->P.GetP(strat->lmBin);
+      kTest_T(&(strat->P));
       // in the homogeneous case FDeg >= pFDeg (sugar/honey)
       // but now, for entering S, T, we reset it
       // in the inhomogeneous case: FDeg == pFDeg
@@ -1810,6 +1814,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
           strat->P.p = redtailBba(&(strat->P),pos-1,strat, withT);
       }
 
+      kTest_T(&(strat->P));
       // refine dynamic ordering
       if (dynamic_method)
       {
@@ -1824,7 +1829,6 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
           ray new_weight = ray_sum(skel.get_rays());
           new_weight.simplify_ray();
           cout << "have ray " << new_weight << "\n";
-          cout << "pause\n";
           // adjust currRing
           //cout << "adjusting weights\n";
           ring oldR = dynR;
@@ -1832,6 +1836,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
           rChangeCurrRing(dynR);
           //cout << "changing current ring\n";
           strat->tailRing = dynR;
+          strat->tailBin = dynR->PolyBin;
           strat->P.tailRing = dynR;
           // convert all the important data
           convert_currentLPPs(CurrentLPPs, oldR, dynR);
@@ -1874,6 +1879,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
         minimcnt++;
       }
 
+      kTest_T(&(strat->P));
       // enter into S, L, and T
       if ((!TEST_OPT_IDLIFT) || (pGetComp(strat->P.p) <= strat->syzComp))
       {
