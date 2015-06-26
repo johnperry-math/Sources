@@ -1707,7 +1707,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
     }
     /* picks the last element from the lazyset L */
     strat->P = strat->L[strat->Ll];
-    kTest_T(&(strat->P));
+    //kTest_T(&(strat->P));
     cout << "picked element with sugar " << strat->P.weighted_sugar << endl;;
     strat->Ll--;
 
