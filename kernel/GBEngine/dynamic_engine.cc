@@ -341,7 +341,7 @@ bool LessByGradHilbertThenDegree(PPWithIdeal &a, PPWithIdeal &b)
   else // use Hilbert series
   {
     intvec * weights = new intvec(n+1);
-    for (int i=0; i < n; ++i) weights[i+1] = Rx->wvhdl[0][i]; 
+    for (int i=0; i < n; ++i) (*weights)[i] = Rx->wvhdl[0][i]; 
     intvec * h1 = a.getHilbertNumerator(weights);
     intvec * h2 = b.getHilbertNumerator(weights);
     delete weights;
@@ -379,7 +379,6 @@ bool LessByGradHilbertThenDegree(PPWithIdeal &a, PPWithIdeal &b)
       else
         result = (*h1)[i] < (*h2)[i];
     }
-    if (h1 != NULL) delete h1; if (h2 != NULL) delete h2;
   }
   return result;
 };
@@ -402,10 +401,13 @@ bool LessByDegreeThenHilbert(PPWithIdeal &a, PPWithIdeal &b)
     else // use Hilbert series
     {
       intvec * weights = new intvec(n+1);
-      for (int i=0; i < n; ++i) weights[i+1] = Rx->wvhdl[0][i]; 
+      for (int i=0; i < n; ++i) (*weights)[i] = Rx->wvhdl[0][i];
       intvec * h1 = a.getHilbertNumerator(weights);
+      //cout << "have h1 "; for (int i=0; i < h1->length(); ++i) cout << (*h1)[i] << ' '; cout << endl;
       intvec * h2 = b.getHilbertNumerator(weights);
+      //cout << "have h2 "; for (int i=0; i < h2->length(); ++i) cout << (*h2)[i] << ' '; cout << endl;
       delete weights;
+      //cout << "deleted weights\n";
       int i = 1;
       for ( /* already initialized */ ;
            i < h1->length() && i < h2->length() && (*h1)[i] == (*h2)[i];
@@ -433,8 +435,6 @@ bool LessByDegreeThenHilbert(PPWithIdeal &a, PPWithIdeal &b)
         else
           result = (*h1)[i] < (*h2)[i];
       }
-      if (h1 != NULL) delete h1;
-      if (h2 != NULL) delete h2;
     }
   }
   return result;

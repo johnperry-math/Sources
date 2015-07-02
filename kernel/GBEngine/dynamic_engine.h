@@ -78,7 +78,7 @@ class PPWithIdeal
       // for polynomial comparison, need the second series
       //hPol = HilbertPolynomial(hSecondSeries(hNum), scDimInt(I));
     };
-    ~PPWithIdeal() { /*idDelete(&I, currRing);*/ }
+    ~PPWithIdeal() { if (hNum != NULL) delete hNum; /*idDelete(&I, currRing);*/ }
     inline poly getPP() const { return t; };
     inline ideal getIdeal() const { return I; };
     inline ray getOrdering() { return ordering; };
