@@ -1598,6 +1598,8 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
     // coerce from old to new
     ring oldR = currRing;
     // convert input polynomials
+    F = id_Copy(F,currRing);
+    Q = id_Copy(Q,currRing);
     convertIdeal(F, oldR, dynR);
     convertIdeal(Q, oldR, dynR);
     rChangeCurrRing(dynR);
@@ -1617,7 +1619,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
   // add weighted degree to generators
   if (dynamic_method)
   {
-    strat->red = redHoney;
+    strat->red = redHoney; // always want redHoney, not a homogeneous method
     for (int i = 0; i <= strat->Ll; ++i)
     {
       strat->L[i].weighted_sugar = 0;
@@ -1765,6 +1767,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
       // not sure why strat->P.FDeg changes sometimes between lines below & here
       if (dynamic_method) strat->P.FDeg = strat->P.pFDeg();
       red_result = strat->red(&strat->P,strat);
+      cout << strat->numReductions << " reductions\n";
       if (errorreported)  break;
     }
 
@@ -1990,6 +1993,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
   if (TEST_OPT_PROT) messageStat(hilbcount,strat);
   SI_RESTORE_OPT1(save);
   if (Q!=NULL) updateResult(strat->Shdl,Q,strat);
+  if (dynamic_method) { id_Delete(&F,dynR); id_Delete(&Q,dynR); }
 
 #ifdef KDEBUG
 #if MYTEST

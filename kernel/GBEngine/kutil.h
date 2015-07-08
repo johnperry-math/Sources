@@ -360,6 +360,7 @@ public:
   int lastAxis;
   int newIdeal;
   int minim;
+  int numReductions;
   #ifdef HAVE_SHIFTBBA
   int lV;
   #endif
