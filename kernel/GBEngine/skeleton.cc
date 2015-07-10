@@ -509,7 +509,7 @@ bool skeleton::ddm(constraint &constraint)
   if (rays_above.size() == 0)
   {
     consistent = false;
-    //cout << "inconsistent\n";
+    //cout << "long test inconsistent\n";
   }
   // proceed only if constraint is consistent, and *not* redundant;
   // redundancy can be checked by making sure
@@ -604,7 +604,8 @@ bool skeleton::ddm(vector<constraint> &new_constraints)
       )
   {
     //cout << "adding constraint " << *nciter << endl;
-    consistent = ddm(*nciter);
+    // perform short test of consistency first
+    consistent = is_consistent(*nciter) and ddm(*nciter);
     //cout << "\tconsistent? " << consistent << endl;
   }
   return consistent;

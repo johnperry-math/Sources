@@ -849,11 +849,12 @@ void SelectMonomial(
     {
       skeleton newSkeleton(currSkel);
       vector<constraint> newvecs;
-      // cout << "testing "; p_Write((*siter).getPP(),Rx);
+      cout << "testing "; p_Write((*siter).getPP(),Rx);
       //ConstraintsForNewPP(*siter, compatiblePPs, newvecs);
       ConstraintsForNewPP(*siter, PPunion, newvecs);
       if (newSkeleton.ddm(newvecs))
       {
+        cout << "consistent\n";
         //if (verifyAndModifyIfNecessary(newSkeleton, CurrentPolys))
         if (verifyAndModifyIfNecessary(newSkeleton, CurrentPolys, numPolys))
         {
@@ -863,9 +864,12 @@ void SelectMonomial(
         }
       }
       else
+      {
+        //cout << "inconsistent\n";
         // this monomial is not, in fact, compatible
         compatiblePPs.erase(siter->getPP());
       // cout << "works? " << !searching << endl;
+      }
     }
   }
   else if (possibleIdealsBasic.size() == 1 && compatiblePPs.size() != 1)

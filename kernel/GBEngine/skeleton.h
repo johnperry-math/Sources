@@ -602,6 +602,16 @@ public:
   /** prints out the constraints, then the rays, then the edges. */
   friend ostream & operator<<(ostream &, const skeleton &);
 
+  /** tests for consistency of a potentially new constraint. */
+  inline bool is_consistent(const constraint & c) const
+  {
+    bool inconsistent = true;
+    for (set<ray>::iterator riter = rays.begin(); inconsistent and riter != rays.end(); ++riter)
+      if (((*riter) * c) > 0)
+        inconsistent = false;
+    return not inconsistent;
+  }
+
   // modification
 
   /**
