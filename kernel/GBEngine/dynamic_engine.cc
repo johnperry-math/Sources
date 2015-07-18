@@ -60,83 +60,15 @@ bool LessByHilbert (PPWithIdeal &a, PPWithIdeal &b)
   return result;
 };
 
-/*void PPWithIdeal::computeNumberNewPairs()
+bool LessBySmoothestDegrees (PPWithIdeal &a, PPWithIdeal &b)
 {
-  ring Rx = currRing;
-  int n = Rx->N;
-  num_new_pairs = min_deg = 0;
-  //cout << "surviving pairs for"; pWrite(t);
-  for (int i=0; i < strat->sl + 1; ++i)
-  {
-    // if gcd(t,Si) == 1 then do not count i
-    if (!pHasNotCF(t,strat->S[i]))
-    {
-      bool has_divisor = false;
-      for (int j=0; (!has_divisor) && j < i; ++j)
-      {
-        // if some j satisfies lcm(t,Sj) | lcm(t,Si) then do not count i
-        has_divisor = true;
-        for (int k=1; has_divisor && k <= n; ++k)
-          if (((pGetExp(t,k) > pGetExp(strat->S[i],k)) ? pGetExp(t,k) : pGetExp(strat->S[i],k))
-              < ((pGetExp(t,k) > pGetExp(strat->S[j],k)) ? pGetExp(t,k) : pGetExp(strat->S[j],k)))
-            has_divisor = false;
-      }
-      if (!has_divisor)
-      {
-        int new_deg = 0;
-        for (int k=1; k <= n; ++k)
-          new_deg += (pGetExp(t,k) > pGetExp(strat->S[i],k))
-            ? pGetExp(t,k)
-            : pGetExp(strat->S[i],k);
-        //for (int k=1; k <= n; ++k)
-        //  new_deg += Rx->wvhdl[0][k] *
-        //    ((pGetExp(t,k) > pGetExp(strat->S[i],k)) ?
-        //        pGetExp(t,k) : pGetExp(strat->S[i],k));
-        if (min_deg == 0 || min_deg > new_deg)
-        {
-          min_deg = new_deg; num_new_pairs = 1;
-        }
-        else if (min_deg == new_deg)
-        {
-          ++num_new_pairs;
-          //cout << '\t'; pWrite(pHead(strat->S[i]));
-        }
-      }
-    }
-  }
-  cout << "we get " << num_new_pairs << " from "; pWrite(t);
-  for (int i=0; i < strat->Ll + 1; ++i)
-  {
-    poly u = (strat->L[i].lcm == NULL) ? strat->L[i].p : strat->L[i].lcm;
-    int new_deg = 0;
-    for (int k=1; k <= n; ++k) new_deg += pGetExp(u,k);
-    if (min_deg == 0 || new_deg <= min_deg)
-    {
-      bool has_divisor = false;
-      for (int j=0; (!has_divisor) && j < strat->sl; ++j)
-      {
-        has_divisor = true;
-        for (int k=1; has_divisor && k <= n; ++k)
-          if (pGetExp(u,k) <
-              ((pGetExp(t,k) > pGetExp(strat->S[j],k)) ? pGetExp(t,k) : pGetExp(strat->S[j],k)))
-            has_divisor = false;
-      }
-      if (!has_divisor)
-      {
-        if (min_deg == 0 || min_deg > new_deg)
-        {
-          min_deg = new_deg; num_new_pairs = 1;
-        }
-        else if (min_deg == new_deg)
-        {
-          ++num_new_pairs;
-          //cout << '\t'; pWrite(u);
-        }
-      }
-    }
-  }
-  cout << " which makes " << num_new_pairs << " pairs total at degree " << min_deg << ".\n";
-}*/
+  return a.getDifferenceInDegree() < b.getDifferenceInDegree();
+};
+
+bool LessByLargestMaxComponent (PPWithIdeal &a, PPWithIdeal &b)
+{
+  return a.getDifferenceInDegree() < b.getDifferenceInDegree();
+}
 
 void PPWithIdeal::computeNumberNewPairs()
 {
@@ -256,9 +188,9 @@ bool LessByNumCritPairs (PPWithIdeal &a, PPWithIdeal &b)
   if (a.howManyNewPairs() < 0) a.computeNumberNewPairs();
   if (b.howManyNewPairs() < 0) b.computeNumberNewPairs();
   if (a.degOfNewPairs() < b.degOfNewPairs())
-    return true;
+    result = true;
   else if (a.degOfNewPairs() > b.degOfNewPairs())
-    return false;
+    result = false;
   // at this point, the degrees of the new pairs will be equal
   else if (a.howManyNewPairs() > b.howManyNewPairs())
     result = true;
@@ -819,12 +751,30 @@ void SelectMonomial(
   }
   switch(method)
   {
-    case ORD_HILBERT_THEN_LEX: possibleIdealsBasic.sort(LessByHilbert); break;
-    case ORD_HILBERT_THEN_DEG: possibleIdealsBasic.sort(LessByHilbertThenDegree); break;
-    case DEG_THEN_ORD_HILBERT: possibleIdealsBasic.sort(LessByDegreeThenHilbert); break;
-    case GRAD_HILB_THEN_DEG:   possibleIdealsBasic.sort(LessByGradHilbertThenDegree); break;
-    case DEG_THEN_GRAD_HILB:   possibleIdealsBasic.sort(LessByDegreeThenGradHilbert); break;
-    case MIN_CRIT_PAIRS:       possibleIdealsBasic.sort(LessByNumCritPairs); break;
+    case ORD_HILBERT_THEN_LEX:
+      possibleIdealsBasic.sort(LessByHilbert);
+      break;
+    case ORD_HILBERT_THEN_DEG:
+      possibleIdealsBasic.sort(LessByHilbertThenDegree);
+      break;
+    case DEG_THEN_ORD_HILBERT:
+      possibleIdealsBasic.sort(LessByDegreeThenHilbert);
+      break;
+    case GRAD_HILB_THEN_DEG:
+      possibleIdealsBasic.sort(LessByGradHilbertThenDegree);
+      break;
+    case DEG_THEN_GRAD_HILB:
+      possibleIdealsBasic.sort(LessByDegreeThenGradHilbert);
+      break;
+    case SMOOTHEST_DEGREES:
+      possibleIdealsBasic.sort(LessBySmoothestDegrees);
+      break;
+    case LARGEST_MAX_COMPONENT:
+      possibleIdealsBasic.sort(LessByLargestMaxComponent);
+      break;
+    case MIN_CRIT_PAIRS:
+      possibleIdealsBasic.sort(LessByNumCritPairs);
+      break;
     default: possibleIdealsBasic.sort(LessByHilbert);
   }
   /*cout << "sorted list\n";

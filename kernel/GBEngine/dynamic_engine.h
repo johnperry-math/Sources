@@ -51,7 +51,7 @@ enum DynamicHeuristic
 {
   ORD_HILBERT_THEN_LEX = 1, ORD_HILBERT_THEN_DEG, DEG_THEN_ORD_HILBERT,
   GRAD_HILB_THEN_DEG, DEG_THEN_GRAD_HILB,
-  SIGNATURE_HILBERT, SIGNATURE_GRAD_HILB, SIGNATURE_DEG,
+  SMOOTHEST_DEGREES, LARGEST_MAX_COMPONENT, PSEUDOSIG_HILB,
   MIN_CRIT_PAIRS, GRAD_MIN_CRIT_PAIRS
 };
 
@@ -66,7 +66,8 @@ class PPWithIdeal
 {
   public:
     PPWithIdeal(poly u, vector<poly> F, ray & w, skStrategy * strat)
-    : t(p_Copy_noCheck(u,currRing)), ordering(w), strat(strat), num_new_pairs(-1)
+    : t(p_Copy_noCheck(u,currRing)), ordering(w), strat(strat),
+      num_new_pairs(-1), min_deg(-1), max_deg(-1)
     {
       I = idInit(F.size() + 1);
       for (unsigned long i = 0; i < F.size(); ++i) { I->m[i] = F[i]; }
@@ -97,9 +98,23 @@ class PPWithIdeal
     inline const int howManyNewPairs() { return num_new_pairs; }
     inline const int degOfNewPairs() { return min_deg; }
     void computeNumberNewPairs();
+    inline int getDifferenceInDegree()
+    {
+      if (min_deg < 0)
+      {
+        min_deg = max_deg = p_WDegree(I->m[0],currRing);
+        for (int i = 1; i < IDELEMS(I); ++i)
+        {
+          int d = p_WDegree(I->m[i],currRing);
+          if (d < min_deg) min_deg = d;
+          if (d > max_deg) max_deg = d;
+        }
+      }
+      return max_deg - min_deg;
+    }
   protected:
-    poly t; ideal I; ray ordering; intvec * hNum; poly hPol; skStrategy *strat;
-    int num_new_pairs, min_deg;
+    poly t; ideal I; ray ordering; intvec * hNum; poly hPol; skStrategy * strat;
+    int num_new_pairs, min_deg, max_deg;
 };
 
 /**
