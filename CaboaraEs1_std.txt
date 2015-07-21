@@ -4,4 +4,5 @@ ideal i=t4zb+x3ya,
         xy2z2d+zc2e2,
         tx2y3z4+ab2c3e2;
 ideal j=std(i);
+size(j);
 basering;

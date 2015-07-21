@@ -1009,6 +1009,7 @@ int redLazy (LObject* h,kStrategy strat)
 */
 int redHoney (LObject* h, kStrategy strat)
 {
+  cout << "starting redHoney\n";
   if (strat->tl<0) return 1;
   //if (h->GetLmTailRing()==NULL) return 0; // HS: SHOULD NOT BE NEEDED!
   assume(h->FDeg == h->pFDeg());
@@ -1153,7 +1154,9 @@ int redHoney (LObject* h, kStrategy strat)
       {
         int dummy=strat->sl;
         if (kFindDivisibleByInS(strat, &dummy, h) < 0)
+        {
           return 1;
+        }
         enterL(&strat->L,&strat->Ll,&strat->Lmax,*h,at);
 #ifdef KDEBUG
         if (TEST_OPT_DEBUG)
@@ -1817,6 +1820,8 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
           strat->P.p = redtailBba(&(strat->P),pos-1,strat, withT);
       }
 
+      { int l; pLast(strat->P.p, l); if (l>strat->nummons) {strat->nummons=l;}}
+      cout << strat->nummons << " maximum # mons\n";
       kTest_T(&(strat->P));
       // refine dynamic ordering
       if (dynamic_method)

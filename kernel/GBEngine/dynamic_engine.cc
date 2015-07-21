@@ -129,7 +129,7 @@ void PPWithIdeal::computeNumberNewPairs()
     }
   }
   delete [] keepers;
-  cout << "we get " << num_new_pairs << " from "; pWrite(t);
+  // cout << "we get " << num_new_pairs << " from "; pWrite(t);
   // third main loop: apply Buchberger's lcm criterion to old pairs, UNLESS
   // all three lcm's are equal
   for (int i = 0; i < strat->Ll + 1; ++i)
@@ -176,7 +176,7 @@ void PPWithIdeal::computeNumberNewPairs()
       }
     }
   }
-  cout << " which makes " << num_new_pairs << " pairs total at degree " << min_deg << ".\n";
+  // cout << " which makes " << num_new_pairs << " pairs total at degree " << min_deg << ".\n";
 }
 
 bool LessByNumCritPairs (PPWithIdeal &a, PPWithIdeal &b)
@@ -506,7 +506,8 @@ void compatiblePP(
   const set<ray> &bndrys,     // known boundary vectors
   set<poly> &result,          // returned as PPs for Hilbert function
                                       // ("easy" (& efficient?) to extract exps
-  set<poly> &boundary_mons    // boundary monomials
+  set<poly> &boundary_mons,   // boundary monomials
+  skeleton &skel              // used for alternate refinement
 )
 {
   // get the exponent vector of the current LPP, insert it
@@ -522,7 +523,7 @@ void compatiblePP(
   initial_candidates.insert(currentLPP);
   // compare other monomials with LPP
   //cout << "initial test of monomials\n";
-  for (
+  /*for (
         set<poly>::iterator b_ptr = allPPs.begin();
         b_ptr != allPPs.end();
         ++b_ptr
@@ -547,15 +548,41 @@ void compatiblePP(
       {
         // only need one success
         initial_candidates.insert(*b_ptr);
+        cout << "succeeded with " << bray << endl;
         searching = false;
       }
     }
+  }*/
+  for (set<poly>::iterator b_ptr = allPPs.begin(); b_ptr != allPPs.end(); ++b_ptr)
+  {
+    if (*b_ptr != currentLPP && skel.makes_consistent_constraint(*b_ptr, currentLPP))
+      initial_candidates.insert(*b_ptr);
   }
   result = initial_candidates;
-  // second refinement: compare remaining monomials with each other
-  for (set<poly>::iterator p_ptr = initial_candidates.begin(); p_ptr != initial_candidates.end(); ++p_ptr)
+  // (new) alternate refinement: compare remaining monomials against each other,
+  // using skeleton to ensure consistency
+  // this approach should be more efficient than the one below, yet equivalent to it
+  for (set<poly>::iterator t = initial_candidates.begin();
+       t != initial_candidates.end();
+       ++t)
   {
-    //cout << "testing initial candidate "; p_Write(*p_ptr, Rx);
+    // cout << "testing for consistency: "; pWrite(*t);
+    bool good_constraints = true;
+    for (set<poly>::iterator u = initial_candidates.begin();
+         good_constraints && u != initial_candidates.end();
+         ++u)
+      if (*t != *u)
+        if (!skel.makes_consistent_constraint(*t,*u))
+          good_constraints = false;
+    if (good_constraints)
+    {
+      boundary_mons.insert(*t);
+      // cout << "\tconsistent!\n";
+    }
+  }
+  // second refinement: compare remaining monomials with each other
+  /*for (set<poly>::iterator p_ptr = initial_candidates.begin(); p_ptr != initial_candidates.end(); ++p_ptr)
+  {
     p_GetExpV(*p_ptr, a, Rx);
     for (unsigned long i = 1; i <= n; ++i) { along[i-1] = a[i]; }
     ray pray(n, along);
@@ -574,13 +601,13 @@ void compatiblePP(
           ray qray(n, along);
           // guard against invalid exclusions
           unsigned long long wt = (*w_ptr) * qray;
-          if ((((*w_ptr) * pray) <= wt) && wt != 0) { maybe_this_vector = false; /*cout << "\tfailed by "; p_Write(*q_ptr, Rx); */ }
+          if ((((*w_ptr) * pray) <= wt) && wt != 0) { maybe_this_vector = false; }
         }
       cleared_the_hurdle = maybe_this_vector;
       if (!cleared_the_hurdle) boundary_mons.insert(*p_ptr);
     }
     if (cleared_the_hurdle) result.insert(*p_ptr);
-  }
+  } */
   //cout << "boundary monomials:\n";
   //for (set<poly>::iterator piter = boundary_mons.begin(); piter != boundary_mons.end(); ++piter) pWrite(*piter);
   //cout << "compatible monomials:\n";
@@ -733,7 +760,7 @@ void SelectMonomial(
   }
   // loop through all exponent vectors
   cout << allPPs.size() << " possible monomials\n";
-  compatiblePP(currentLPP, allPPs, currSkel.get_rays(), compatiblePPs, boundaryPPs);
+  compatiblePP(currentLPP, allPPs, currSkel.get_rays(), compatiblePPs, boundaryPPs, currSkel);
   cout << compatiblePPs.size() << " compatible monomials\n";
   for (set<poly>::iterator piter = compatiblePPs.begin(); piter != compatiblePPs.end(); ++piter)
     pWrite(*piter);
@@ -799,12 +826,12 @@ void SelectMonomial(
     {
       skeleton newSkeleton(currSkel);
       vector<constraint> newvecs;
-      cout << "testing "; p_Write((*siter).getPP(),Rx);
+      //cout << "testing "; p_Write((*siter).getPP(),Rx);
       //ConstraintsForNewPP(*siter, compatiblePPs, newvecs);
       ConstraintsForNewPP(*siter, PPunion, newvecs);
       if (newSkeleton.ddm(newvecs))
       {
-        cout << "consistent\n";
+        //cout << "consistent\n";
         //if (verifyAndModifyIfNecessary(newSkeleton, CurrentPolys))
         if (verifyAndModifyIfNecessary(newSkeleton, CurrentPolys, numPolys))
         {
@@ -815,10 +842,10 @@ void SelectMonomial(
       }
       else
       {
-        //cout << "inconsistent\n";
+        // cout << "inconsistent\n";
+        // cout << newSkeleton;
         // this monomial is not, in fact, compatible
         compatiblePPs.erase(siter->getPP());
-      // cout << "works? " << !searching << endl;
       }
     }
   }

@@ -51,7 +51,8 @@ int ksReducePoly(LObject* PR,
   }
 #endif
 #endif
-if (strat != NULL) strat->numReductions++;
+if (strat != NULL)
+  { strat->numReductions++; } 
   int ret = 0;
   ring tailRing = PR->tailRing;
   kTest_L(PR);

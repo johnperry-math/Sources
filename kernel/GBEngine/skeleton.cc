@@ -603,10 +603,14 @@ bool skeleton::ddm(vector<constraint> &new_constraints)
         ++nciter
       )
   {
-    //cout << "adding constraint " << *nciter << endl;
     // perform short test of consistency first
     consistent = is_consistent(*nciter) and ddm(*nciter);
-    //cout << "\tconsistent? " << consistent << endl;
+    //if (!consistent)
+    //{
+    //  cout << "inconsistent\n";
+    //  cout << "failed ray: " << *nciter;
+    //  cout << "skeleton: \n" << *this;
+    //}
   }
   return consistent;
 }

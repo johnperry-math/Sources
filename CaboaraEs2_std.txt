@@ -6,4 +6,5 @@ ideal i=x32z23-y82a,
         x5y17z22e-1,
         xyzt-1;
 ideal j=std(i);
+size(j);
 basering;

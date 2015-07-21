@@ -1,5 +1,0 @@
-ring r=43,(x,y),dp;
-ideal i=x2+x+1,x2+y2-4;
-selmon(i);
-exit;
-

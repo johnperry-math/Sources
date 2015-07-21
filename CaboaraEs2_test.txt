@@ -5,5 +5,4 @@ ideal i=x32z23-y82a,
         x22-y33z12d,
         x5y17z22e-1,
         xyzt-1;
-qring q=dstd(i,2);
-basering;
+qring q=dstd(i,1);
