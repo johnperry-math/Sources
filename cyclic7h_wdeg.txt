@@ -1,0 +1,10 @@
+ring r=43,(t,u,v,w,x,y,z,h),wp( 5769, 5768, 4588, 2902, 5726, 4904, 1, 3453 );
+ideal i=t+u+v+w+x+y+z,
+        tu+uv+vw+wx+xy+yz+zt,
+        tuv+uvw+vwx+wxy+xyz+yzt+ztu,
+        tuvw+uvwx+vwxy+wxyz+xyzt+yztu+ztuv,
+        tuvwx+uvwxy+vwxyz+wxyzt+xyztu+yztuv+ztuvw,
+        tuvwxy+uvwxyz+vwxyzt+wxyztu+xyztuv+yztuvw+ztuvwx,
+        tuvwxyz-h7;
+def j=std(i);
+size(j);

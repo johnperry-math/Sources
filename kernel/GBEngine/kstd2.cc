@@ -1353,7 +1353,7 @@ ring new_dynamic_ring_from_old(ring oldR, ray *new_weight)
 {
   // set up ordering
   int n = oldR->N;
-  int ** wvhdl = (int **)omAlloc0(4*sizeof(int_ptr));
+  /*int ** wvhdl = (int **)omAlloc0(4*sizeof(int_ptr));
   wvhdl[0] = (int *)omAlloc(n*n*sizeof(int));
   wvhdl[1] = NULL;
   wvhdl[2] = NULL;
@@ -1377,7 +1377,20 @@ ring new_dynamic_ring_from_old(ring oldR, ray *new_weight)
   order[2] = ringorder_C;
   block0[2] = 1;
   block1[2] = n;
-  order[3] = 0;
+  order[3] = 0;*/
+  int ** wvhdl = (int **)omAlloc0(3*sizeof(int_ptr));
+  wvhdl[0] = (int *)omAlloc(n*sizeof(int));
+  wvhdl[1] = wvhdl[2] = NULL;
+  for (int i = 0; i < n; ++i)
+    wvhdl[0][i] = (new_weight == NULL) ? 1 : (*new_weight)[i];
+  int * order = (int *)omAlloc(2*sizeof(int *));
+  int *block0 = (int *)omAlloc0(2*sizeof(int *));
+  int *block1 = (int *)omAlloc0(2*sizeof(int *));
+  order[0] = ringorder_wp;
+  order[1] = ringorder_C;
+  block0[0] = block0[1] = 1;
+  block1[0] = block1[1] = n;
+  order[2] = 0;
   // create ring & return
   ring result = rDefault(nCopyCoeff(oldR->cf), oldR->N, 
                          ((const char **)oldR->names), 4, order,
