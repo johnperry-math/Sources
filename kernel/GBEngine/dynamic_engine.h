@@ -95,8 +95,8 @@ class PPWithIdeal
         return hPol = HilbertPolynomial(hSecondSeries(getHilbertNumerator()),
                                                       scDimInt(I));
     };
-    inline const int howManyNewPairs() { return num_new_pairs; }
-    inline const int degOfNewPairs() { return min_deg; }
+    inline int howManyNewPairs() const { return num_new_pairs; }
+    inline int degOfNewPairs() const { return min_deg; }
     void computeNumberNewPairs();
     inline int getDifferenceInDegree()
     {
@@ -142,6 +142,7 @@ void compatiblePP(
   \param currentPolys the current basis
 */
 bool verifyAndModifyIfNecessary(
+  ring Tx,
   skeleton &skel,
   const vector<poly> &currentPolys
 );
@@ -169,6 +170,7 @@ void ConstraintsForNewPP(
   \param method the method to apply; see `DynamicHeuristic`
 */
 void SelectMonomial(
+    ring,
     poly &r,                          // changes
     vector<poly> &CurrentLPPs,      // changes
     //const vector<poly> &CurrentPolys,

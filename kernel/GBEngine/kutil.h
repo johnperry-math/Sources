@@ -750,6 +750,8 @@ BOOLEAN kStratChangeTailRing(kStrategy strat,
 // initiate a change of the tailRing of strat -- should be called
 // right before main loop in bba
 void kStratInitChangeTailRing(kStrategy strat);
+// details of the above
+BOOLEAN kStratChangeTailRingDetails(kStrategy strat, LObject *L, TObject *T, ring new_tailRing);
 
 /// Output some debug info about a given strategy
 void kDebugPrint(kStrategy strat);

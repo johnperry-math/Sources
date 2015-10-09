@@ -8451,27 +8451,8 @@ BOOLEAN kCheckStrongCreation(int atR, poly m1, int atS, poly m2, kStrategy strat
 }
 #endif
 
-BOOLEAN kStratChangeTailRing(kStrategy strat, LObject *L, TObject* T, unsigned long expbound)
+BOOLEAN kStratChangeTailRingDetails(kStrategy strat, LObject *L, TObject *T, ring new_tailRing)
 {
-  assume((strat->tailRing == currRing) || (strat->tailRing->bitmask < currRing->bitmask));
-  /* initial setup or extending */
-
-  if (expbound == 0) expbound = strat->tailRing->bitmask << 1;
-  if (expbound >= currRing->bitmask) return FALSE;
-  strat->overflow=FALSE;
-  ring new_tailRing = rModifyRing(currRing,
-  // Hmmm .. the condition pFDeg == p_Deg
-  // might be too strong
-#ifdef HAVE_RINGS
-  (strat->homog && currRing->pFDeg == p_Deg && !(rField_is_Ring(currRing))), // TODO Oliver
-#else
-  (strat->homog && currRing->pFDeg == p_Deg), // omit_degree
-#endif
-  (strat->ak==0), // omit_comp if the input is an ideal
-  expbound); // exp_limit
-
-  if (new_tailRing == currRing) return TRUE;
-
   strat->pOrigFDeg_TailRing = new_tailRing->pFDeg;
   strat->pOrigLDeg_TailRing = new_tailRing->pLDeg;
 
@@ -8549,6 +8530,32 @@ BOOLEAN kStratChangeTailRing(kStrategy strat, LObject *L, TObject* T, unsigned l
                                                    new_tailRing);
   }
   kTest_TS(strat);
+  return true;
+}
+
+BOOLEAN kStratChangeTailRing(kStrategy strat, LObject *L, TObject* T, unsigned long expbound)
+{
+  assume((strat->tailRing == currRing) || (strat->tailRing->bitmask < currRing->bitmask));
+  /* initial setup or extending */
+
+  if (expbound == 0) expbound = strat->tailRing->bitmask << 1;
+  if (expbound >= currRing->bitmask) return FALSE;
+  strat->overflow=FALSE;
+  ring new_tailRing = rModifyRing(currRing,
+  // Hmmm .. the condition pFDeg == p_Deg
+  // might be too strong
+#ifdef HAVE_RINGS
+  (strat->homog && currRing->pFDeg == p_Deg && !(rField_is_Ring(currRing))), // TODO Oliver
+#else
+  (strat->homog && currRing->pFDeg == p_Deg), // omit_degree
+#endif
+  (strat->ak==0), // omit_comp if the input is an ideal
+  expbound); // exp_limit
+
+  if (new_tailRing == currRing) return TRUE;
+
+  kStratChangeTailRingDetails(strat, L, T, new_tailRing);
+
   if (TEST_OPT_PROT)
     PrintS("]");
   return TRUE;

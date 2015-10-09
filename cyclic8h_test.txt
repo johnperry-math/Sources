@@ -8,3 +8,4 @@ ideal i=s+t+u+v+w+x+y+z,
         stuvwxy+tuvwxyz+uvwxyzs+vwxyzst+wxyzstu+xyzstuv+yzstuvw+zstuvwx,
         stuvwxyz-h8;
 qring j=dstd(i,1);
+exit;

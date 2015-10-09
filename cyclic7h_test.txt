@@ -1,4 +1,4 @@
-ring r=43,(t,u,v,w,x,y,z,h),dp;
+ring r=43,(t,u,v,w,x,y,z,h), dp;
 ideal i=t+u+v+w+x+y+z,
         tu+uv+vw+wx+xy+yz+zt,
         tuv+uvw+vwx+wxy+xyz+yzt+ztu,
@@ -7,3 +7,4 @@ ideal i=t+u+v+w+x+y+z,
         tuvwxy+uvwxyz+vwxyzt+wxyztu+xyztuv+yztuvw+ztuvwx,
         tuvwxyz-h7;
 qring j=dstd(i,1);
+exit;

@@ -6,6 +6,7 @@
 #include <coeffs/coeffs.h>
 #include <polys/coeffrings.h>
 #include <polys/monomials/p_polys.h>
+#include <polys/prCopy.h>
 
 #include <iostream>
 using std::cout; using std::endl;
@@ -617,16 +618,18 @@ void compatiblePP(
 }
 
 bool verifyAndModifyIfNecessary(
+  ring Tx,
   skeleton &skel,
   //const vector<poly> &currentPolys
   polyset currentPolys,
   int numPolys
 )
 {
+  ring Rx = currRing;
   bool consistent = true; // innocent until proven guilty
   ray w = ray_sum(skel.get_rays()); // our tentative ordering
   unsigned long n = w.get_dimension();
-  ring Rx = currRing;
+  //ring Rx = currRing;
   int * pExp = new int[n + 1];
   int * qExp = new int[n + 1];
   unsigned long long *entries = new unsigned long long [n]; // used for entries for new rays
@@ -653,7 +656,7 @@ bool verifyAndModifyIfNecessary(
       if (pp != titer) // don't compare with LPP; that would be Bad (TM)
       {
         // create a ray for the PP's exponents
-        p_GetExpV(titer, qExp, Rx);
+        p_GetExpV(titer, qExp, Tx);
         for (unsigned long i = 0; i < n; ++i)
           entries[i] = qExp[i + 1];
         ray b(n, entries);
@@ -725,6 +728,7 @@ void ConstraintsForNewPP(
 }
 
 void SelectMonomial(
+    ring Tx,
     poly &r,                          // changes
     vector<poly> &CurrentLPPs,      // changes
     //const vector<poly> &CurrentPolys,
@@ -747,14 +751,16 @@ void SelectMonomial(
   poly currentLPP = p_Head(r, Rx);
   //cout << "comparing against: "; p_Write(currentLPP, Rx);
   set<poly> allPPs, boundaryPPs, compatiblePPs;
+  allPPs.insert(currentLPP);
   // transform monomials into exponent vectors
   for (
-       poly titer = r;
+       poly titer = pNext(r);
        titer != NULL;
        titer = titer->next
       )
   {
-    poly t = pHead(titer);
+    //poly t = pHead(titer);
+    poly t = prHeadR(titer, Tx, Rx);
     allPPs.insert(t);
     //allPPs.insert(p_Head(titer, Rx));
   }
@@ -763,7 +769,7 @@ void SelectMonomial(
   compatiblePP(currentLPP, allPPs, currSkel.get_rays(), compatiblePPs, boundaryPPs, currSkel);
   cout << compatiblePPs.size() << " compatible monomials\n";
   for (set<poly>::iterator piter = compatiblePPs.begin(); piter != compatiblePPs.end(); ++piter)
-    pWrite(*piter);
+    p_Write(*piter, Rx);
   // list possible future ideals, sort by Hilbert Function
   // using a set sorts the ideals automagically by appropriate DynamicHeuristics
   list<PPWithIdeal> possibleIdealsBasic;
@@ -833,7 +839,7 @@ void SelectMonomial(
       {
         //cout << "consistent\n";
         //if (verifyAndModifyIfNecessary(newSkeleton, CurrentPolys))
-        if (verifyAndModifyIfNecessary(newSkeleton, CurrentPolys, numPolys))
+        if (verifyAndModifyIfNecessary(Tx, newSkeleton, CurrentPolys, numPolys))
         {
           searching = false;
           currSkel = newSkeleton;
@@ -854,7 +860,7 @@ void SelectMonomial(
     vector<constraint> newvecs;
     ConstraintsForNewPP(*(possibleIdealsBasic.begin()), compatiblePPs, newvecs);
     currSkel.ddm(newvecs);
-    verifyAndModifyIfNecessary(currSkel, CurrentPolys, numPolys);
+    verifyAndModifyIfNecessary(Tx, currSkel, CurrentPolys, numPolys);
   }
     
   // set marked lpp
