@@ -3,7 +3,10 @@ ideal i=2*x(0)^2 + x(0)*x(1) + x(1)*x(4),
         x(0)^2*x(1)^4 + x(0)^4*x(1)*x(5) + x(0)^4*x(8)^2 + x(0)^3*x(6)*x(8)^2,
         x(0)^5 + x(0)^4*x(4) + x(0)^4*x(6) + x(0)^3*x(4)*x(6),
         x(0)^4*x(1) + x(1)^5 + x(0)^4*x(4) + x(0)^4*x(6);
-def j=std(i);
+def q=dstd(i,1);
+def r = ringofqring(q);
+setring r;
+def j=ideal(q);
 size(j);
 exit;
 

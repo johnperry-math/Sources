@@ -8,3 +8,4 @@ ideal i=t+u+v+w+x+y+z,
         tuvwxyz-h7;
 def j=std(i);
 size(j);
+exit;

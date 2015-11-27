@@ -63,6 +63,8 @@ void convert_stratP(kStrategy strat,
 void convert_stratL(kStrategy strat, ring oldR, ring newR, ring new_tailRing,
                     pShallowCopyDeleteProc p_shallow_copy_delete, poly newTail);
 
+void move_smallest_L_to_back(kStrategy strat);
+
 /**
   Converts those elements of strat->T which are listed as false by whichTs.
   Those listed as true were converted by convert_stratS.

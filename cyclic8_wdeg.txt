@@ -1,4 +1,4 @@
-ring r=43,(s,t,u,v,w,x,y,z,h),dp;
+ring r=43,(s,t,u,v,w,x,y,z),wp(754909,754908,587221,380,601579,746538,494974,93719);
 ideal i=s+t+u+v+w+x+y+z,
         st+tu+uv+vw+wx+xy+yz+zs,
         stu+tuv+uvw+vwx+wxy+xyz+yzs+zst,
@@ -6,8 +6,6 @@ ideal i=s+t+u+v+w+x+y+z,
         stuvw+tuvwx+uvwxy+vwxyz+wxyzs+xyzst+yzstu+zstuv,
         stuvwx+tuvwxy+uvwxyz+vwxyzs+wxyzst+xyzstu+yzstuv+zstuvw,
         stuvwxy+tuvwxyz+uvwxyzs+vwxyzst+wxyzstu+xyzstuv+yzstuvw+zstuvwx,
-        stuvwxyz-h8;
+        stuvwxyz-1;
 ideal j=std(i);
 size(j);
-exit;
-

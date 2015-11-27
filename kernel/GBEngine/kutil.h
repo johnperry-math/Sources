@@ -198,6 +198,7 @@ public:
   poly  lcm;   /*- the lcm of p1,p2 -*/
   kBucket_pt bucket;
   int   i_r1, i_r2;
+  unsigned long age; // how "old" this polynomial is -- prefer reducing older
 
   // initialization
   KINLINE void Init(ring tailRing = currRing);
@@ -399,6 +400,7 @@ public:
   char    noClearS;
   char    completeReduce_retry;
   char    overflow;
+  unsigned age;
 
   skStrategy();
   ~skStrategy();

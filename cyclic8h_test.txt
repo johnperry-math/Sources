@@ -7,5 +7,13 @@ ideal i=s+t+u+v+w+x+y+z,
         stuvwx+tuvwxy+uvwxyz+vwxyzs+wxyzst+xyzstu+yzstuv+zstuvw,
         stuvwxy+tuvwxyz+uvwxyzs+vwxyzst+wxyzstu+xyzstuv+yzstuvw+zstuvwx,
         stuvwxyz-h8;
-qring j=dstd(i,1);
+qring q=dstd(i,1);
+def r=ringofqring(q);
+setring r;
+def j=ideal(q);
+/*print("ideal lt:");
+for (int k=1; k<=size(j); k++)
+{
+  print(lead(j[k]));
+}*/
 exit;

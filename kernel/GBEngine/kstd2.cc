@@ -93,6 +93,7 @@ long sba_interreduction_operations;
 #include "dynamic_engine.h"
 #include "skeleton.h"
 #include "dutil.h"
+#include <ctime>
 
 // #include "timer.h"
 
@@ -1395,7 +1396,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
   if (strat->minim>0) strat->M=idInit(IDELEMS(F),F->rank);
   reduc = olddeg = 0;
   // add weighted degree to generators
-  if (dynamic_method)
+  //if (dynamic_method)
   {
     strat->red = redHoney; // always want redHoney, not a homogeneous method
     //strat->red = redHomog;
@@ -1404,8 +1405,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
       strat->L[i].weighted_sugar = 0;
       for (int j = 1; j <= currRing->N; ++j)
         strat->L[i].weighted_sugar += p_GetExp(strat->L[i].p, j, currRing);
-      //cout << "weighted sugar is " << strat->L[i].weighted_sugar << " for ";
-      pWrite(strat->L[i].p);
+        //strat->L[i].weighted_sugar += p_GetExp(strat->L[i].p, j, currRing) * p_Weight(j, currRing);
     }
   }
 
@@ -1433,7 +1433,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
 #endif /* KDEBUG */
 
 #ifdef HAVE_TAIL_RING
-  if(!idIs0(F) &&(!rField_is_Ring(currRing)) /*&& !dynamic_method*/)  // create strong gcd poly computes with tailring and S[i] ->to be fixed
+  if(!idIs0(F) &&(!rField_is_Ring(currRing)))  // create strong gcd poly computes with tailring and S[i] ->to be fixed
     kStratInitChangeTailRing(strat);
 #endif
   if (BVERBOSE(23))
@@ -1448,7 +1448,6 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
     //strat->tailRing = dynR;
     //strat->noTailReduction = false; // need to reduce tails
     ring new_tailRing = new_dynamic_tail_ring(strat, currRing);
-    //kStratChangeTailRingDetails(strat, NULL, NULL, new_tailRing);
   }
 
 #ifdef KDEBUG
@@ -1484,11 +1483,13 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
       else strat->noClearS=TRUE;
     }
     /* picks the last element from the lazyset L */
+    if (dynamic_method) move_smallest_L_to_back(strat);
     strat->P = strat->L[strat->Ll];
+    cout << "picked " << strat->Ll << endl;
     cout << "picked element with sugar " << strat->P.weighted_sugar << endl;;
     cout << '\t'; p_Write(strat->P.p, currRing, strat->tailRing);
-    cout << '\t'; p_Write(strat->P.p1, currRing, strat->tailRing);
-    cout << '\t'; p_Write(strat->P.p2, currRing, strat->tailRing);
+    cout << '\t'; p_Write(pHead(strat->P.p1), currRing, strat->tailRing);
+    cout << '\t'; p_Write(pHead(strat->P.p2), currRing, strat->tailRing);
     strat->Ll--;
 
     if (pNext(strat->P.p) == strat->tail)
@@ -1531,6 +1532,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
       strat->P.PrepareRed(strat->use_buckets);
     }
 
+    clock_t t = clock();
     if (strat->P.p == NULL && strat->P.t_p == NULL)
     {
       red_result = 0;
@@ -1542,12 +1544,11 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
                 &olddeg,&reduc,strat, red_result);
 
       /* reduction of the element choosen from L */
-      // not sure why strat->P.FDeg changes sometimes between lines below & here
-      if (dynamic_method) strat->P.FDeg = strat->P.pFDeg();
       red_result = strat->red(&strat->P,strat);
       cout << strat->numReductions << " reductions\n";
       if (errorreported)  break;
     }
+    t = clock() - t;
 
     if (strat->overflow)
     {
@@ -1576,6 +1577,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
 #endif /* MYTEST */
 #endif /* KDEBUG */
 
+      clock_t u = clock();
       // reduce the tail and normalize poly
       // in the ring case we cannot expect LC(f) = 1,
       // therefore we call pContent instead of pNorm
@@ -1594,6 +1596,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
         if ((TEST_OPT_REDSB)||(TEST_OPT_REDTAIL)||(dynamic_method))
           strat->P.p = redtailBba(&(strat->P),pos-1,strat, withT);
       }
+      t += clock() - u;
 
       { int l; pLast(strat->P.p, l); if (l>strat->nummons) {strat->nummons=l;}}
       cout << strat->nummons << " maximum # mons\n";
@@ -1643,6 +1646,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
         } // ordering changed?
         //cout << "done\n";
       } // end dynamic stuff
+      cout << "added "; pWrite(pHead(strat->P.p));
 
 #ifdef KDEBUG
       if (TEST_OPT_DEBUG){PrintS("new s:");strat->P.wrp();PrintLn();}
@@ -1715,6 +1719,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
     {
       p_Delete(&strat->P.p2, currRing, strat->tailRing);
     }
+    cout << "time to reduce: " << t << endl;
 
 #ifdef KDEBUG
     memset(&(strat->P), 0, sizeof(strat->P));
@@ -1755,7 +1760,7 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
   {
     completeReduce(strat);
 #ifdef HAVE_TAIL_RING
-    if (strat->completeReduce_retry && !dynamic_method)
+    if (strat->completeReduce_retry)
     {
       // completeReduce needed larger exponents, retry
       // to reduce with S (instead of T)

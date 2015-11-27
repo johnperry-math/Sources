@@ -1,4 +1,5 @@
-ring r=43,(s,t,u,v,w,x,y,z,h),wp(17612, 17611, 13742, 1, 14096, 17491, 11572, 2209, 10791);
+/*ring r=43,(s,t,u,v,w,x,y,z,h),wp(17612, 17611, 13742, 1, 14096, 17491, 11572, 2209, 10791);*/
+ring r=43,(s,t,u,v,w,x,y,z,h),wp(11583, 11582, 10606, 1, 11242, 11510, 7287, 3099, 7511);
 ideal i=s+t+u+v+w+x+y+z,
         st+tu+uv+vw+wx+xy+yz+zs,
         stu+tuv+uvw+vwx+wxy+xyz+yzs+zst,
@@ -9,4 +10,9 @@ ideal i=s+t+u+v+w+x+y+z,
         stuvwxyz-h8;
 def j=std(i);
 size(j);
+/*print("ideal lt:");
+for (int k=1; k<=size(j); k++)
+{
+  print(lead(j[k]));
+}*/
 exit;

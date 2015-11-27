@@ -768,8 +768,8 @@ void SelectMonomial(
   cout << allPPs.size() << " possible monomials\n";
   compatiblePP(currentLPP, allPPs, currSkel.get_rays(), compatiblePPs, boundaryPPs, currSkel);
   cout << compatiblePPs.size() << " compatible monomials\n";
-  for (set<poly>::iterator piter = compatiblePPs.begin(); piter != compatiblePPs.end(); ++piter)
-    p_Write(*piter, Rx);
+  //for (set<poly>::iterator piter = compatiblePPs.begin(); piter != compatiblePPs.end(); ++piter)
+  //  p_Write(*piter, Rx);
   // list possible future ideals, sort by Hilbert Function
   // using a set sorts the ideals automagically by appropriate DynamicHeuristics
   list<PPWithIdeal> possibleIdealsBasic;
@@ -874,7 +874,7 @@ void SelectMonomial(
   for (int i = 0; i < (int )(new_weight.get_dimension()); ++i)
     ordering_changed = ordering_changed or ((int )new_weight[i]) != Rx->wvhdl[0][i];
   cout << "ordering changed? " << ordering_changed << endl;
-  cout << "finished with "; pWrite(t);
+  //cout << "finished with "; pWrite(t);
   /*for (unsigned long i = 0; i < CurrentLPPs.size(); ++i) pWrite(CurrentLPPs[i]);
   cout << endl;
   cout << "skeleton after:\n";

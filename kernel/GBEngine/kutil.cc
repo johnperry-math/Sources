@@ -1736,14 +1736,12 @@ void enterOnePairNormal (int i,poly p,int ecart, int isFromQ,kStrategy strat, in
       // first get sugar of multiples
       for (int k = 1; k <= currRing->N; ++k)
       {
-        /*d1 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p1,i, currRing))*p_Weight(i, currRing);
-        d2 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p2,i, currRing))*p_Weight(i, currRing);*/
+        /*d1 += (p_GetExp(Lp.lcm, k, currRing) - p_GetExp(Lp.p1, k, currRing))*p_Weight(k, currRing);
+        d2 += (p_GetExp(Lp.lcm, k, currRing) - p_GetExp(Lp.p2, k, currRing))*p_Weight(k, currRing);*/
         d1 += (p_GetExp(Lp.lcm,k, currRing) - p_GetExp(Lp.p1,k, currRing));
         d2 += (p_GetExp(Lp.lcm,k, currRing) - p_GetExp(Lp.p2,k, currRing));
       }
       // now determine sugar of spoly
-      /*long duf1 = d1 + p_WDegree(Lp.p1, currRing);
-      long duf2 = d2 + p_WDegree(Lp.p2, currRing);*/ 
       long duf1 = d1 + strat->R[strat->S_2_R[i]]->weighted_sugar;
       long duf2 = d2 + strat->L[strat->Ll + 1].weighted_sugar;
       Lp.weighted_sugar = (duf1 > duf2) ? duf1 : duf2;
@@ -1845,7 +1843,7 @@ int cmpDynPair(LObject &a, LObject &b)
   poly at = (a.lcm == NULL) ? a.p : a.lcm;
   poly bt = (b.lcm == NULL) ? b.p : b.lcm;
   return (p_LmCmp(at, bt, currRing));
-  if (a.lcm != NULL) // a is a new pair
+  /*if (a.lcm != NULL) // a is a new pair
   {
     if (b.lcm != NULL) return p_LmCmp(a.lcm, b.lcm, currRing);
     else return 1; // this shouldn't happen in practice
@@ -1855,12 +1853,13 @@ int cmpDynPair(LObject &a, LObject &b)
     if (b.lcm != NULL) return -1; // consider generators smaller
     // both are generators; compare leading terms
     return p_LmCmp(a.p, b.p, currRing);
-  }
+  }*/
 }
 
 // adapted from posInL0
 int dynamicPositionInL(const LSet set, const int length, LObject *Lp, kStrategy strat)
 {
+  return length + 1;
   if (length < 0) return 0;
 
   if (set[length].weighted_sugar > Lp->weighted_sugar)
@@ -2955,6 +2954,8 @@ void initenterpairsDynamic(poly h,int k,int ecart,int isFromQ,kStrategy strat, i
     {
       LObject Lp;
       Lp.i_r = -1;
+      strat->age += 1;
+      Lp.age = strat->age;
       Lp.ecart = 0; Lp.length = 0;
       Lp.lcm = pInit(); pLcm(h,strat->S[i],Lp.lcm); pSetm(Lp.lcm);
       if (strat->fromT && !TEST_OPT_INTSTRATEGY) pNorm(h);
@@ -2966,14 +2967,12 @@ void initenterpairsDynamic(poly h,int k,int ecart,int isFromQ,kStrategy strat, i
       // first get sugar of multiples
       for (int k = 1; k <= currRing->N; ++k)
       {
-        /*d1 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p1,i, currRing))*p_Weight(i, currRing);
-        d2 += (p_GetExp(Lp.lcm,i, currRing) - p_GetExp(Lp.p2,i, currRing))*p_Weight(i, currRing);*/
+        /*d1 += (p_GetExp(Lp.lcm, k, currRing) - p_GetExp(Lp.p1, k, currRing))*p_Weight(k, currRing);
+        d2 += (p_GetExp(Lp.lcm, k, currRing) - p_GetExp(Lp.p2, k, currRing))*p_Weight(k, currRing);*/
         d1 += (p_GetExp(Lp.lcm,k, currRing) - p_GetExp(Lp.p1,k, currRing));
         d2 += (p_GetExp(Lp.lcm,k, currRing) - p_GetExp(Lp.p2,k, currRing));
       }
       // now determine sugar of spoly
-      /*long duf1 = d1 + p_WDegree(Lp.p1, currRing);
-      long duf2 = d2 + p_WDegree(Lp.p2, currRing);*/ 
       long duf1 = d1 + strat->R[strat->S_2_R[i]]->weighted_sugar;
       long duf2 = d2 + strat->P.weighted_sugar;
       Lp.weighted_sugar = (duf1 >= duf2) ? duf1 : duf2;

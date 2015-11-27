@@ -612,6 +612,7 @@ bool skeleton::ddm(vector<constraint> &new_constraints)
     //  cout << "skeleton: \n" << *this;
     //}
   }
+  cout << rays.size() << " corner vectors\n";
   return consistent;
 }
 

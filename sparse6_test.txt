@@ -25,7 +25,8 @@ ideal i=3*x(0)^6 + x(0)^5*x(1) + x(0)^3*x(3)^3 + x(0)*x(1)^4*x(4)
           + x(0)*x(1)^2*x(2)^2
           + x(0)*x(2)^4 + x(0)*x(1)^3*x(4) + x(2)^2*x(4)*x(6)*x(7)
           + x(0)*x(1)^3*x(8);
-def j=std(i);
+def q=dstd(i,1);
+def r=ringofqring(q);
+def j=ideal(q);
 size(j);
 exit;
-

@@ -138,6 +138,7 @@ void compatiblePP(
 /**
   Verifies that the leading power products of the current basis
   remain compatible with the proposed refinement of ordering.
+  \param Tx tailRing
   \param skel the skeleton corresponding to the choice of \f$w\f$
   \param currentPolys the current basis
 */

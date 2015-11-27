@@ -107,16 +107,6 @@ void convert_stratS(kStrategy strat, bool * & whichTs,
     poly oldP = strat->S[i];
     sort_split_poly(&(strat->S[i]), oldR, newR, strat->tailRing, new_tailRing);
     poly newP = strat->S[i];
-    /*poly oldP = strat->S[i];
-    poly oldT = pNext(oldP);
-    oldP->next = NULL;
-    //poly newT = p_shallow_copy_delete(oldT, old_tailRing, new_tailRing, new_tailBin);
-    poly newT = prShallowCopyR(oldT, old_tailRing, new_tailRing);
-    p_Setm(newT, new_tailRing);
-    poly newP = prShallowCopyR(oldP, oldR, newR);
-    p_Setm(newP, newR);
-    pNext(newP) = newT;
-    strat->S[i] = newP;*/
     strat->sevS[i] = pGetShortExpVector(strat->S[i]);
     for (int j = 0; j <= strat->tl; ++j)
       if (strat->T[j].p == oldP)
@@ -141,7 +131,6 @@ void convert_stratS(kStrategy strat, bool * & whichTs,
   Converts strat->P data to new ring.
   newT is the new tailRing.
 */
-//void convert_stratP(kStrategy &strat, ring oldR, ring newR, ring newT)
 void convert_stratP(kStrategy strat,
                     ring new_tailRing,
                     ring oldR, ring newR,
@@ -159,19 +148,6 @@ void convert_stratP(kStrategy strat,
           strat->P.t_p, strat->tailRing, new_tailRing);
       p_ShallowDelete(&oldP, strat->tailRing);
     }
-    // working with tail ring, data in strat->P.t_p
-    /*poly oldT = strat->P.t_p;
-    strat->P.t_p = prShallowCopyR(oldT, strat->tailRing, new_tailRing);
-    p_ShallowDelete(&oldT, strat->tailRing);
-    p_Setm(strat->P.t_p, new_tailRing);
-    p_Norm(strat->P.t_p, new_tailRing);
-    strat->P.p->next = NULL;
-    p_ShallowDelete(&(strat->P.p), oldR);
-    poly next = strat->P.t_p->next;
-    strat->P.t_p->next = NULL;
-    strat->P.p = prShallowCopyR(strat->P.t_p, new_tailRing, newR);
-    strat->P.p->next = next;
-    strat->P.t_p->next = next;*/
   }
   else if ((strat->P.p != NULL) && pNext(strat->P.p) != strat->tail)
   {
@@ -182,27 +158,19 @@ void convert_stratP(kStrategy strat,
     p_ShallowDelete(&oldP, oldR);
     strat->P.tailRing = newR; // should be newR
     p_Norm(strat->P.p, newR);
-    //strat->P.ShallowCopyDelete(new_tailRing, p_shallow_copy_delete);
   }
-  /*poly oldP = strat->P.p;
-  strat->P.p = prShallowCopyR(oldP, oldR, newR);
-  p_Setm(strat->P.p, newR);
-  p_ShallowDelete(&oldP, oldR);*/
   strat->P.FDeg = strat->P.pFDeg();
   strat->P.sev = p_GetShortExpVector(strat->P.p, newR);
   strat->P.tailRing = new_tailRing;
-  /*strat->P.tailRing = newR;
-  p_Norm(strat->P.p, newR);*/
 }
 
 /**
   Converts strat[i]->L data to new ring. This includes L.p, but not L.p1 or L.p2,
-  as those chang in convert_stratS and convert_stratT.
+  as those change in convert_stratS and convert_stratT.
   However, we do use the value of L.p1 and L.p2 to determine how to change L.p.
 
   Also converts L.lcm, L.sev, L.FDeg, and L.tailRing.
 */
-//void convert_stratL(kStrategy &strat, ring oldR, ring newR)
 void convert_stratL(kStrategy strat, ring oldR, ring newR, ring new_tailRing,
                     pShallowCopyDeleteProc p_shallow_copy_delete, poly newTail)
 {
@@ -230,50 +198,10 @@ void convert_stratL(kStrategy strat, ring oldR, ring newR, ring new_tailRing,
           p_ShallowDelete(&oldP, oldR);
         }
       }
-      /*poly oldP = strat->L[i].t_p;
-      strat->L[i].t_p = prShallowCopyR(oldP, strat->tailRing, new_tailRing);
-      p_Setm(strat->L[i].t_p, new_tailRing);
-      p_ShallowDelete(&oldP, strat->tailRing);
-      //resort_poly_in_new_ring(&(strat->L[i].t_p), new_tailRing);
-      strat->L[i].p->next = NULL;
-      p_ShallowDelete(&(strat->L[i].p), oldR);
-      poly t = strat->L[i].t_p;
-      poly u = strat->L[i].t_p->next;
-      t->next = NULL;
-      strat->L[i].p = prShallowCopyR(t, new_tailRing, newR);
-      p_Setm(strat->L[i].p, newR);
-      t->next = u;
-      pNext(strat->L[i].p) = u;
-      //p_SortMerge(strat->L[i].p, new_tailRing, true);*/
       (strat->L)[i].FDeg = (strat->L)[i].pFDeg();
       (strat->L)[i].sev = p_GetShortExpVector((strat->L)[i].p,newR);
       strat->L[i].tailRing = new_tailRing;
-      /*if (strat->L[i].t_p != NULL)
-      {
-        poly old_tp = strat->L[i].t_p;
-        strat->L[i].t_p = prShallowCopyR(old_tp, strat->tailRing, new_tailRing);
-        p_ShallowDelete(&old_tp, strat->tailRing);
-      }*/
     }
-    /*if ((strat->L)[i].p != NULL)
-    {
-      poly oldP = (strat->L)[i].p;
-      if ((strat->L)[i].p1 != NULL)
-      {
-        p_LmDelete(&oldP, oldR);
-        strat->L[i].p = ksCreateShortSpoly((strat->L)[i].p1, (strat->L)[i].p2, newR);
-        pNext(strat->L[i].p) = strat->tail;
-      }
-      else
-      {
-        (strat->L)[i].p = prShallowCopyR(oldP, oldR, newR);
-        p_ShallowDelete(&oldP, oldR);
-        p_Setm((strat->L)[i].p, newR);
-      }
-      (strat->L)[i].FDeg = (strat->L)[i].pFDeg();
-      (strat->L)[i].sev = p_GetShortExpVector((strat->L)[i].p,newR);
-      (strat->L)[i].tailRing = newR;
-    }*/
     if ((strat->L)[i].lcm != NULL)
     {
       poly oldP = (strat->L)[i].lcm;
@@ -281,7 +209,7 @@ void convert_stratL(kStrategy strat, ring oldR, ring newR, ring new_tailRing,
       (strat->L)[i].lcm = prShallowCopyR(oldP, oldR, newR);
       p_ShallowDelete(&oldP, oldR);
       p_Setm((strat->L)[i].lcm, newR);
-      /*(strat->L)[i].weighted_sugar = p_WDegree((strat->L)[i].lcm,newR);*/
+      //(strat->L)[i].weighted_sugar = p_WDegree((strat->L)[i].lcm,newR);
     }
     else
     {
@@ -289,6 +217,34 @@ void convert_stratL(kStrategy strat, ring oldR, ring newR, ring new_tailRing,
     }
   }
   strat->L->tailRing = new_tailRing;
+}
+
+void move_smallest_L_to_back(kStrategy strat)
+{
+  int minL = strat->Ll;
+  int i = 0;
+  // find LObject with smallest weighted sugar
+  for (/* */; i < strat->Ll; ++i)
+    if (strat->L[i].weighted_sugar <= strat->L[minL].weighted_sugar)
+    {
+      if (strat->L[i].weighted_sugar < strat->L[minL].weighted_sugar)
+        minL = i;
+      else if (strat->L[i].age < strat->L[minL].age)
+        minL = i;
+      /*{
+        poly at = (strat->L[i].lcm == NULL) ? strat->L[i].p : strat->L[i].lcm;
+        poly bt = (strat->L[minL].lcm == NULL) ? strat->L[minL].p : strat->L[minL].lcm;
+        if (p_LmCmp(bt, at, currRing))
+          minL = i;
+      }*/
+    }
+  // swap if necessary
+  if (minL != strat->Ll)
+  {
+    LObject tmp = strat->L[minL];
+    strat->L[minL] = strat->L[strat->Ll];
+    strat->L[strat->Ll] = tmp;
+  }
 }
 
 /**

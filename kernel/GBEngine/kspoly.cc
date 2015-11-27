@@ -21,6 +21,9 @@
 #ifdef HAVE_RINGS
 #include <kernel/polys.h>
 #endif
+#include <ctime>
+#include <iostream>
+using std::cout; using std::endl;
 
 #ifdef KDEBUG
 int red_count = 0;
@@ -99,12 +102,14 @@ if (strat != NULL)
   }
 
   p_ExpVectorSub(lm, p2, tailRing); // Calculate the Monomial we must multiply to p2
-  // next line is dynamic
-  //PR->weighted_sugar = (PR->weighted_sugar >= PW->weighted_sugar + p_WDegree(lm, currRing)) ? PR->weighted_sugar : PW->weighted_sugar + p_WDegree(lm, currRing);
-  //PR->weighted_sugar = (PR->weighted_sugar >= PW->weighted_sugar + p_Deg(lm, currRing)) ? PR->weighted_sugar : PW->weighted_sugar + p_Deg(lm, currRing);
-  int add_deg = 0;
-  for (int i = 0; i < currRing->N; ++i) add_deg += p_GetExp(lm,i,currRing);
-  PR->weighted_sugar = (PR->weighted_sugar >= PW->weighted_sugar + add_deg) ? PR->weighted_sugar : PW->weighted_sugar + add_deg;
+  if (strat /*and strat->isDynamic*/) {
+    int add_deg = 0;
+    for (int i = 1; i <= currRing->N; ++i)
+      add_deg += p_GetExp(lm,i,tailRing);
+    //  add_deg = p_WDegree(lm, tailRing);
+    if (PR->weighted_sugar < PW->weighted_sugar + add_deg)
+      PR->weighted_sugar += add_deg;
+  }
 
   if (tailRing != currRing)
   {

@@ -6,4 +6,9 @@ ideal i=t+u+v+w+x+y+z,
         tuvwx+uvwxy+vwxyz+wxyzt+xyztu+yztuv+ztuvw,
         tuvwxy+uvwxyz+vwxyzt+wxyztu+xyztuv+yztuvw+ztuvwx,
         tuvwxyz-1;
-qring j=dstd(i,9);
+qring q=dstd(i,4);
+def r=ringofqring(q);
+setring r;
+def j=ideal(q);
+size(j);
+exit;
