@@ -113,6 +113,8 @@ void convert_stratS(kStrategy strat, bool * & whichTs,
       {
         whichTs[j] = true;
         strat->T[j].p = newP;
+        strat->T[j].max = p_GetMaxExpP(pNext(newP), new_tailRing);
+        p_Setm(strat->T[j].max, new_tailRing);
         strat->sevT[j] = pGetShortExpVector(strat->T[j].p);
         strat->T[j].tailRing = new_tailRing;
         strat->T[j].t_p = k_LmInit_currRing_2_tailRing(strat->T[j].p, new_tailRing);
@@ -181,13 +183,19 @@ void convert_stratL(kStrategy strat, ring oldR, ring newR, ring new_tailRing,
       // strat->L[i].p1 and strat->L[i].p2 are taken care of with strat->S
       // but if they are nonzero we need a short spoly
       if (strat->L[i].p1 != NULL)
-      {
+      { // generatED pair
         p_LmDelete(&(strat->L[i].p), oldR);
         strat->L[i].p = ksCreateShortSpoly(
             strat->L[i].p1, strat->L[i].p2, new_tailRing);
         pNext(strat->L[i].p) = newTail;
+        if (strat->L[i].t_p != NULL) {
+          poly oldP = strat->L[i].t_p;
+          strat->L[i].t_p = prShallowCopyR(oldP, strat->tailRing, new_tailRing);
+          p_Setm(strat->L[i].t_p, new_tailRing);
+          p_ShallowDelete(&oldP, strat->tailRing);
+        }
       }
-      else {
+      else { // generatOR pair
         if (strat->L[i].t_p != NULL)
           strat->L[i].t_p = sort_split_poly(&(strat->L[i].p),
               oldR, newR, strat->tailRing, new_tailRing, true);
@@ -209,11 +217,9 @@ void convert_stratL(kStrategy strat, ring oldR, ring newR, ring new_tailRing,
       (strat->L)[i].lcm = prShallowCopyR(oldP, oldR, newR);
       p_ShallowDelete(&oldP, oldR);
       p_Setm((strat->L)[i].lcm, newR);
-      //(strat->L)[i].weighted_sugar = p_WDegree((strat->L)[i].lcm,newR);
     }
     else
     {
-      //(strat->L)[i].weighted_sugar = p_WDegree((strat->L)[i].p,newR);
     }
   }
   strat->L->tailRing = new_tailRing;
@@ -231,12 +237,6 @@ void move_smallest_L_to_back(kStrategy strat)
         minL = i;
       else if (strat->L[i].age < strat->L[minL].age)
         minL = i;
-      /*{
-        poly at = (strat->L[i].lcm == NULL) ? strat->L[i].p : strat->L[i].lcm;
-        poly bt = (strat->L[minL].lcm == NULL) ? strat->L[minL].p : strat->L[minL].lcm;
-        if (p_LmCmp(bt, at, currRing))
-          minL = i;
-      }*/
     }
   // swap if necessary
   if (minL != strat->Ll)
@@ -263,10 +263,6 @@ void convert_stratT(kStrategy strat, bool * & whichTs,
     if ( whichTs != NULL && whichTs[i])
     {
       // this should be taken care of with the corresponding strat->S
-      /*strat->T[i].tailRing = new_tailRing;
-      strat->T[i].t_p = k_LmInit_currRing_2_tailRing(strat->T[i].p, new_tailRing);
-      pNext(strat->T[i].t_p) = pNext(strat->T[i].p);
-      */
     }
     else
     {
@@ -274,13 +270,6 @@ void convert_stratT(kStrategy strat, bool * & whichTs,
       poly oldT = pNext(oldP);
       strat->T[i].t_p = sort_split_poly(&strat->T[i].p,
           oldR, newR, strat->tailRing, new_tailRing, true);
-      /*oldP->next = NULL;
-      strat->T[i].p = prShallowCopyR(oldP, oldR, newR);
-      p_Setm(strat->T[i].p, newR);
-      strat->T[i].p->next = prShallowCopyR(oldT, strat->tailRing, new_tailRing);
-      p_Setm(strat->T[i].p->next, new_tailRing);
-      resort_poly_in_new_ring(&(strat->T[i].p->next), new_tailRing);
-      sort_split_poly(&(strat->T[i].p), newR, new_tailRing);*/
       for (int j = 0; j <= strat->Ll; ++j)
       {
         if (strat->L[j].p1 == oldP)
@@ -288,35 +277,12 @@ void convert_stratT(kStrategy strat, bool * & whichTs,
         if (strat->L[j].p2 == oldP)
           strat->L[j].p2  = strat->T[i].p;
       }
-      //oldP->next = NULL;
-      //p_ShallowDelete(&oldP, oldR);
-      //p_ShallowDelete(&oldT, strat->tailRing);
-      /*
-      poly oldP = (strat->T)[i].p;
-      (strat->T)[i].p = prShallowCopyR(oldP, oldR, newR);
-      p_Setm((strat->T)[i].p, newR);
-      strat->sevT[i] = pGetShortExpVector(strat->T[i].p);
-      (strat->T)[i].t_p = NULL;
-      for (int j = 0; j <= strat->Ll; ++j)
-      {
-        if (strat->L[j].p1 == oldP)
-        {
-          //cout << "changing pair poly 1  of " << j << ' '; pWrite(oldP);
-          strat->L[j].p1 = strat->T[i].p;
-        }
-        if (strat->L[j].p2 == oldP)
-        {
-          //cout << "changing pair poly 2 of " << j << ' '; pWrite(oldP);
-          strat->L[j].p2 = strat->T[i].p;
-        }
-      }
-      p_ShallowDelete(&oldP, oldR);
-      */
-      //cout << "becomes "; pWrite((strat->T)[i].p);
     }
     //(strat->T)[i].tailRing = newR;
     (strat->T)[i].tailRing = new_tailRing;
     (strat->T)[i].FDeg = (strat->T)[i].pFDeg();
+    (strat->T)[i].max = p_GetMaxExpP(pNext(strat->T[i].p), new_tailRing);
+    p_Setm(strat->T[i].max, new_tailRing);
   }
   //if (strat->tl >= 0)
   //  omFree(whichTs);

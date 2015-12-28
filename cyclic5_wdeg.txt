@@ -1,0 +1,10 @@
+ring r=43,(v,w,x,y,z),wp(1218, 786, 1217, 344, 42);
+ideal i=v+w+x+y+z,
+        vw+wx+xy+yz+zv,
+        vwx+wxy+xyz+yzv+zvw,
+        vwxy+wxyz+xyzv+yzvw+zvwx,
+        vwxyz-1;
+def j=std(i);
+size(j);
+exit;
+

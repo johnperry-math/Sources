@@ -1626,23 +1626,17 @@ ideal bba (ideal F, ideal Q,intvec *w,intvec *hilb,kStrategy strat, int dynamic_
           pShallowCopyDeleteProc polyCopier =
               pGetShallowCopyDeleteProc(strat->tailRing, dynTail);
           //cout << "changing current ring\n";
-          //strat->tailRing = dynR;
-          //strat->tailBin = dynR->PolyBin;
-          //strat->P.tailRing = dynR;
           // convert all the important data
           convert_currentLPPs(CurrentLPPs, oldR, dynR);
           bool *whichTs = NULL;
           convert_stratS(strat, whichTs, oldR, dynR, strat->tailRing, dynTail,
                          polyCopier, new_tailBin);
-          //convert_stratP(strat, oldR, dynR);
           convert_stratP(strat, dynTail, oldR, dynR, polyCopier);
           convertIdeal(F, oldR, dynR);
-          convert_stratL(strat, oldR, dynR, dynTail, polyCopier, newTail);
-          //convert_stratT(strat, whichTs, oldR, dynR);
           strat->tail = newTail;
+          convert_stratL(strat, oldR, dynR, dynTail, polyCopier, newTail);
           convert_stratT(strat, whichTs, oldR, dynR, dynTail,
                          polyCopier, new_tailBin);
-          //rDelete(oldR);
         } // ordering changed?
         //cout << "done\n";
       } // end dynamic stuff

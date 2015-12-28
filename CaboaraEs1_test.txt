@@ -4,3 +4,12 @@ ideal i=t4zb+x3ya,
         xy2z2d+zc2e2,
         tx2y3z4+ab2c3e2;
 qring q = dstd(i,1);
+def r=ringofqring(q);
+setring r;
+def j=ideal(q);
+for (int k=1; k<=size(j); k++)
+{
+  print(lead(j[k]));
+}
+exit;
+

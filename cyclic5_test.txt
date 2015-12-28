@@ -1,0 +1,13 @@
+ring r=43,(v,w,x,y,z),dp;
+ideal i=v+w+x+y+z,
+        vw+wx+xy+yz+zv,
+        vwx+wxy+xyz+yzv+zvw,
+        vwxy+wxyz+xyzv+yzvw+zvwx,
+        vwxyz-1;
+def q=dstd(i,1);
+def r=ringofqring(q);
+setring r;
+def j=ideal(q);
+size(j);
+exit;
+
